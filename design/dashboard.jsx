@@ -16,13 +16,43 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
         </div>
       </div>
 
-      {/* Period selector — applies to KPIs and analytics below */}
+      {/* HERO: Очередь (требуют внимания / упр. решения / лучшие практики) */}
+      <Card>
+        <CardHeader>
+          <div style={{display:'flex', alignItems:'center', gap:14, flex:1, flexWrap:'wrap'}}>
+            <Tabs
+              tabs={[
+                {key:'attention', label:'Требуют внимания', count: queueCounts.attention},
+                {key:'management', label:'Управленческие решения', count: queueCounts.management},
+                {key:'practices', label:'Лучшие практики', count: queueCounts.practices},
+              ]}
+              active={queueTab}
+              onChange={setQueueTab}
+            />
+            <div className="section-h-sub" style={{margin:0, flex:'1 1 240px', minWidth:0}}>
+              {queueTab === 'attention' && 'Звонки с критическими нарушениями — отсортированы AI по приоритету'}
+              {queueTab === 'management' && 'Системные сбои и нестандартные кейсы, требующие решения РОП'}
+              {queueTab === 'practices' && 'Эталонные приёмы, которые AI рекомендует масштабировать на команду'}
+            </div>
+          </div>
+          <div className="row" style={{gap:10, alignItems:'center'}}>
+            <div className="muted" style={{fontSize:11.5, display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap'}}>
+              <span style={{width:6, height:6, borderRadius:3, background:'#22C55E', display:'inline-block', flexShrink:0}}></span>
+              обновлено только что · авто
+            </div>
+          </div>
+        </CardHeader>
+        {queueTab === 'attention' && <AttentionQueue items={queue} onOpenCall={onOpenCall} onProcess={onProcess} onCreateTask={onCreateTask}/>}
+        {queueTab === 'management' && <ManagementQueue items={queueManagement} onProcess={onProcess}/>}
+        {queueTab === 'practices' && <PracticesQueue items={queuePractices}/>}
+      </Card>
+
+      {/* Period selector + KPIs */}
       <div className="row-between" style={{marginTop:4}}>
         <div className="section-h" style={{margin:0}}>Аналитика за период</div>
         <PeriodSelector value={period} onChange={setPeriod}/>
       </div>
 
-      {/* KPIs (4.4 ТЗ) */}
       <div className="kpi-grid">
         <Card className="kpi-card">
           <div className="kpi-label">Средняя оценка звонка <Tooltip text="Среднее от всех составляющих оценки звонка по критериям AI"/></div>
@@ -60,37 +90,6 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           </div>
         </Card>
       </div>
-
-      {/* HERO: Очередь (требуют внимания / упр. решения / лучшие практики) */}
-      <Card>
-        <CardHeader>
-          <div style={{display:'flex', alignItems:'center', gap:14, flex:1, flexWrap:'wrap'}}>
-            <Tabs
-              tabs={[
-                {key:'attention', label:'Требуют внимания', count: queueCounts.attention},
-                {key:'management', label:'Управленческие решения', count: queueCounts.management},
-                {key:'practices', label:'Лучшие практики', count: queueCounts.practices},
-              ]}
-              active={queueTab}
-              onChange={setQueueTab}
-            />
-            <div className="section-h-sub" style={{margin:0, flex:'1 1 240px', minWidth:0}}>
-              {queueTab === 'attention' && 'Звонки с критическими нарушениями — отсортированы AI по приоритету'}
-              {queueTab === 'management' && 'Системные сбои и нестандартные кейсы, требующие решения РОП'}
-              {queueTab === 'practices' && 'Эталонные приёмы, которые AI рекомендует масштабировать на команду'}
-            </div>
-          </div>
-          <div className="row" style={{gap:10, alignItems:'center'}}>
-            <div className="muted" style={{fontSize:11.5, display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap'}}>
-              <span style={{width:6, height:6, borderRadius:3, background:'#22C55E', display:'inline-block', flexShrink:0}}></span>
-              обновлено только что · авто
-            </div>
-          </div>
-        </CardHeader>
-        {queueTab === 'attention' && <AttentionQueue items={queue} onOpenCall={onOpenCall} onProcess={onProcess} onCreateTask={onCreateTask}/>}
-        {queueTab === 'management' && <ManagementQueue items={queueManagement} onProcess={onProcess}/>}
-        {queueTab === 'practices' && <PracticesQueue items={queuePractices}/>}
-      </Card>
 
       {/* Рейтинг сотрудников (4.5 ТЗ) */}
       <RatingTable ratings={ratings} onOpen={onOpenManager}/>

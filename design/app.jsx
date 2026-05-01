@@ -1,6 +1,6 @@
 // ── Main app ────────────────────────────────────────────────────────────
 function App() {
-  const [route, setRoute] = useState({ page: 'tasks' });
+  const [route, setRoute] = useState({ page: 'dashboard' });
   const [period, setPeriod] = useState('week');
   const [aiOpen, setAiOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState(null);
