@@ -240,9 +240,15 @@ function normalizePeriodState(v) {
   return v || { kind:'week', current:true };
 }
 
+const fmtDayShort = (d) => `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;
+
 function periodLabel(s) {
   switch (s.kind) {
-    case 'day': return `${s.preset || 7} дн.`;
+    case 'day':
+      if (s.customStart && s.customEnd) {
+        return `${fmtDayShort(new Date(s.customStart))} — ${fmtDayShort(new Date(s.customEnd))}`;
+      }
+      return `${s.preset || 7} дн.`;
     case 'week': return s.current ? 'Эта неделя' : 'Прошлая неделя';
     case 'month': return s.current ? 'Этот месяц' : `${MONTHS_SHORT[s.monthIdx ?? PERIOD_TODAY.getMonth()]} ${s.year ?? PERIOD_TODAY.getFullYear()}`;
     case 'quarter': return s.current ? 'Этот квартал' : `Q${s.quarter} ${s.year}`;
@@ -253,6 +259,9 @@ function periodLabel(s) {
 
 function rangeFor(s) {
   if (s.kind === 'day') {
+    if (s.customStart && s.customEnd) {
+      return { start: new Date(s.customStart), end: new Date(s.customEnd) };
+    }
     const end = PERIOD_TODAY;
     const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - (s.preset || 7) + 1);
     return { start, end };
@@ -272,25 +281,29 @@ const inRange = (c, r) => {
   const t = new Date(c.y, c.m, c.d).getTime();
   return t >= r.start.getTime() && t <= r.end.getTime();
 };
+const sameDay = (c, d) => d && c.y === d.getFullYear() && c.m === d.getMonth() && c.d === d.getDate();
 const isWeekend = (c) => {
   const dow = new Date(c.y, c.m, c.d).getDay();
   return dow === 0 || dow === 6;
 };
 
-const CalendarMonth = ({ year, month, range }) => {
+const CalendarMonth = ({ year, month, range, pickStart, onPick }) => {
   const cells = monthGrid(year, month);
   return <div className="period-month">
     {cells.map((c, i) => {
       const sel = inRange(c, range);
-      return <span key={i}
-        className={cn('period-day', c.out && 'is-out', sel && 'is-sel', !c.out && isWeekend(c) && 'is-weekend')}>
+      const isPick = sameDay(c, pickStart);
+      const Tag = onPick && !c.out ? 'button' : 'span';
+      return <Tag key={i}
+        className={cn('period-day', c.out && 'is-out', sel && 'is-sel', isPick && 'is-pick-start', !c.out && isWeekend(c) && 'is-weekend', onPick && !c.out && 'is-clickable')}
+        onClick={onPick && !c.out ? () => onPick(new Date(c.y, c.m, c.d)) : undefined}>
         {c.d}
-      </span>;
+      </Tag>;
     })}
   </div>;
 };
 
-const CalendarTwoMonths = ({ year, month, range, onNav }) => {
+const CalendarTwoMonths = ({ year, month, range, onNav, pickStart, onPick }) => {
   const navYear = (delta) => onNav({ year: year + delta, month });
   const next = month === 11 ? { y: year + 1, m: 0 } : { y: year, m: month + 1 };
   return <div className="period-calendar">
@@ -302,26 +315,53 @@ const CalendarTwoMonths = ({ year, month, range, onNav }) => {
         <button onClick={() => navYear(1)} aria-label="Следующий год"><Icon.chevRight size={11}/></button>
       </span>
     </div>
-    <CalendarMonth year={year} month={month} range={range}/>
+    <CalendarMonth year={year} month={month} range={range} pickStart={pickStart} onPick={onPick}/>
     <div className="period-calendar-month-label">{MONTHS_LONG[next.m]}</div>
-    <CalendarMonth year={next.y} month={next.m} range={range}/>
+    <CalendarMonth year={next.y} month={next.m} range={range} pickStart={pickStart} onPick={onPick}/>
   </div>;
 };
 
+// День: presets (7/30/90/365) OR free-pick range. Click any day → set start;
+// click another day → set end (auto-orders if you click earlier date second).
+// Clicking a preset chip clears the custom range.
 function DayBody({ state, onChange }) {
   const preset = state.kind === 'day' ? (state.preset || 7) : 7;
+  const hasCustom = state.kind === 'day' && state.customStart && state.customEnd;
   const [cal, setCal] = useState({ year: PERIOD_TODAY.getFullYear(), month: PERIOD_TODAY.getMonth() });
+  const [pickStart, setPickStart] = useState(null);
+
+  const handlePick = (d) => {
+    if (!pickStart) { setPickStart(d); return; }
+    let s = pickStart, e = d;
+    if (e.getTime() < s.getTime()) [s, e] = [e, s];
+    setPickStart(null);
+    const iso = (x) => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+    onChange({ kind:'day', customStart: iso(s), customEnd: iso(e) });
+  };
+
+  const range = pickStart && !hasCustom
+    ? { start: pickStart, end: pickStart }
+    : rangeFor(state.kind === 'day' ? state : { kind:'day', preset });
+
   return <Fragment>
     <div className="period-subtabs">
       {DAY_PRESETS.map(n => (
         <button key={n}
-          className={cn('period-subtab-btn', preset === n && 'is-active')}
-          onClick={() => onChange({ kind:'day', preset:n })}>
+          className={cn('period-subtab-btn', !hasCustom && preset === n && 'is-active')}
+          onClick={() => { setPickStart(null); onChange({ kind:'day', preset:n }); }}>
           {n} дней
         </button>
       ))}
     </div>
-    <CalendarTwoMonths year={cal.year} month={cal.month} range={rangeFor({ kind:'day', preset })} onNav={setCal}/>
+    <div className="period-pick-hint">
+      {pickStart && !hasCustom
+        ? `Выбрано начало: ${fmtDayShort(pickStart)}. Кликните конечную дату.`
+        : hasCustom
+          ? `Период: ${fmtDayShort(new Date(state.customStart))} — ${fmtDayShort(new Date(state.customEnd))}`
+          : 'Или выберите даты в календаре'}
+    </div>
+    <CalendarTwoMonths year={cal.year} month={cal.month}
+      range={range} pickStart={pickStart} onNav={setCal} onPick={handlePick}/>
   </Fragment>;
 }
 

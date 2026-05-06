@@ -8,8 +8,8 @@ function AgGridReactLite({ rowData, columnDefs, onRowClicked, pageSize=20, pageS
     const gridOptions = {
       columnDefs,
       rowData,
-      rowHeight: 48,
-      headerHeight: 38,
+      rowHeight: 52,
+      headerHeight: 40,
       suppressCellFocus: true,
       animateRows: true,
       pagination: true,

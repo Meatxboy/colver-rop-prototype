@@ -39,6 +39,40 @@
     noAgreement: noAgreement, noAgreementDelta: -8,
   };
 
+  // Per-period KPI variants — baseline ('week') is the real aggregation above;
+  // other periods scale volume by an empirical multiplier and shift score/
+  // conversion so each filter shows a distinct narrative on the dashboard.
+  const r1 = (n) => Math.round(n);
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const periodVariants = {
+    day:     { mult: 0.18, scoreShift:  0.2, convShift:  6, callsPlan:  40, callsDelta:  4, queueDelta:  1, noTargetDelta:  -2, noAgreementDelta:  -1 },
+    week:    { mult: 1.00, scoreShift:  0.0, convShift:  0, callsPlan: 200, callsDelta:  8, queueDelta:  2, noTargetDelta:  -5, noAgreementDelta:  -8 },
+    month:   { mult: 4.30, scoreShift: -0.1, convShift: -3, callsPlan: 800, callsDelta: 11, queueDelta:  6, noTargetDelta:  -8, noAgreementDelta: -10 },
+    quarter: { mult: 13.0, scoreShift: -0.2, convShift: -5, callsPlan:2400, callsDelta:  9, queueDelta: 14, noTargetDelta: -12, noAgreementDelta: -14 },
+    year:    { mult: 52.0, scoreShift: -0.3, convShift: -7, callsPlan:9600, callsDelta: 18, queueDelta: 26, noTargetDelta: -20, noAgreementDelta: -25 },
+  };
+  const kpisByPeriod = {};
+  for (const [kind, v] of Object.entries(periodVariants)) {
+    kpisByPeriod[kind] = {
+      callsTotal: r1(totalCalls * v.mult),
+      callsPlan: v.callsPlan,
+      callsDelta: v.callsDelta,
+      callsTrend: C.KPI_TREND.noTarget,
+      queueCount: r1(queueAll.length * Math.max(1, v.mult)),
+      queueDelta: v.queueDelta,
+      avgScore: round1(Math.max(2.0, Math.min(5.0, avgScore + v.scoreShift))),
+      scoreDelta: round1(0.3 + v.scoreShift * 0.5),
+      scoreTrend: C.KPI_TREND.score,
+      conversion: Math.max(0, Math.min(100, conv + v.convShift)),
+      convDelta: 4 + v.convShift,
+      convTrend: C.KPI_TREND.conv,
+      noTarget: r1(noTarget * v.mult),
+      noTargetDelta: v.noTargetDelta,
+      noAgreement: r1(noAgreement * v.mult),
+      noAgreementDelta: v.noAgreementDelta,
+    };
+  }
+
   // Queue
   const queue = queueAll.map(q => {
     const linkedCall = q.callId ? callsById[q.callId] : null;
@@ -212,5 +246,5 @@
     outcome: p.resolution === 'resolved' ? 'good' : 'pending',
   }));
 
-  window.MOCK_DATA = { kpis, queue, queueManagement, queuePractices, managers, lossReasons, objections, callsToday, calls, callDetails, processed, ratings };
+  window.MOCK_DATA = { kpis, kpisByPeriod, queue, queueManagement, queuePractices, managers, lossReasons, objections, callsToday, calls, callDetails, processed, ratings };
 })();

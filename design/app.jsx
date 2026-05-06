@@ -54,9 +54,10 @@ function App() {
     setAiOpen(tweaks.aiOpen);
     setPeriod(tweaks.period);
     document.body.style.background = tweaks.bgTone === 'white' ? '#fff' : tweaks.bgTone === 'cool' ? '#F5F8FF' : '#FAFAFA';
-    document.documentElement.style.setProperty('--row-h', tweaks.density === 'compact' ? '36px' : '44px');
-    document.documentElement.style.setProperty('--row-padding-y', tweaks.density === 'compact' ? '6px' : '10px');
-    document.documentElement.style.setProperty('--table-font-size', tweaks.density === 'compact' ? '12px' : '13px');
+    document.documentElement.style.setProperty('--row-h', tweaks.density === 'compact' ? '40px' : '52px');
+    document.documentElement.style.setProperty('--row-padding-y', tweaks.density === 'compact' ? '8px' : '14px');
+    document.documentElement.style.setProperty('--table-font-size', tweaks.density === 'compact' ? '13px' : '16px');
+    document.documentElement.style.setProperty('--table-secondary-font-size', tweaks.density === 'compact' ? '12px' : '13px');
   }, [tweaks]);
 
   useEffect(() => {
@@ -79,7 +80,10 @@ function App() {
     return { tab: ratingsTab, setTab: setRatingsTab, list: sorted };
   }, [data.managers, ratingsTab]);
 
-  const dashboardData = { ...data, queue: queueData };
+  // Period filter (object form { kind, … } or legacy string) → swap KPIs.
+  const periodKind = (typeof period === 'string' ? period : period?.kind) || 'week';
+  const dashboardKpis = data.kpisByPeriod?.[periodKind] || data.kpis;
+  const dashboardData = { ...data, queue: queueData, kpis: dashboardKpis };
 
   const openCall = (id) => { setCallModalId(id); setNotifOpen(false); };
   const openManager = (id) => setRoute({ page:'manager', managerId: id });

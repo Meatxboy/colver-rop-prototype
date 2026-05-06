@@ -36,7 +36,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
             </div>
           </div>
           <div className="row" style={{gap:10, alignItems:'center'}}>
-            <div className="muted" style={{fontSize:11.5, display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap'}}>
+            <div className="muted" style={{fontSize:12, display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap'}}>
               <span style={{width:6, height:6, borderRadius:3, background:'#22C55E', display:'inline-block', flexShrink:0}}></span>
               обновлено только что · авто
             </div>
@@ -62,7 +62,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           </div>
           <div className="kpi-meta">
             <Delta value={kpis.scoreDelta} suffix=""/>
-            <span className="muted" style={{fontSize:11}}>к прошлой неделе</span>
+            <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
           </div>
         </Card>
         <Card className="kpi-card is-danger">
@@ -70,7 +70,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           <div className="kpi-value-row"><div className="kpi-value">{kpis.noTarget}</div><span className="kpi-unit">звонков</span></div>
           <div className="kpi-meta">
             <Delta value={kpis.noTargetDelta} invertColor suffix="%"/>
-            <span className="muted" style={{fontSize:11}}>к прошлой неделе</span>
+            <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
           </div>
         </Card>
         <Card className="kpi-card is-primary">
@@ -78,7 +78,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           <div className="kpi-value-row"><div className="kpi-value">{kpis.conversion}%</div></div>
           <div className="kpi-meta">
             <Delta value={kpis.convDelta} suffix=" пп"/>
-            <span className="muted" style={{fontSize:11}}>к прошлой неделе</span>
+            <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
           </div>
         </Card>
         <Card className="kpi-card">
@@ -86,7 +86,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           <div className="kpi-value-row"><div className="kpi-value">{kpis.noAgreement}</div><span className="kpi-unit">звонков</span></div>
           <div className="kpi-meta">
             <Delta value={kpis.noAgreementDelta} invertColor suffix="%"/>
-            <span className="muted" style={{fontSize:11}}>к прошлой неделе</span>
+            <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
           </div>
         </Card>
       </div>
@@ -196,7 +196,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           <div className="sidebar-logo" style={{width:24, height:24, fontSize:12, borderRadius:6}}>C</div>
           <div>
             <div style={{fontWeight:600, fontSize:13}}>Colver — Контроль качества звонков</div>
-            <div className="muted" style={{fontSize:11.5}}>v2.4.1 · обновлено 28.04.2026 · команда А · 6 менеджеров</div>
+            <div className="muted" style={{fontSize:12.5}}>v2.4.1 · обновлено 28.04.2026 · команда А · 6 менеджеров</div>
           </div>
         </div>
         <div className="dashboard-footer-right">
@@ -206,7 +206,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           <span className="muted">·</span>
           <a href="#" onClick={(e)=>e.preventDefault()}>Сменить роль</a>
           <span className="muted">·</span>
-          <span className="muted" style={{fontSize:11.5}}>© 2026 Colver</span>
+          <span className="muted" style={{fontSize:12.5}}>© 2026 Colver</span>
         </div>
       </footer>
     </div>
@@ -542,7 +542,7 @@ function RatingCard({ title, rows, valueKey, maxVal, suffix, onOpen }) {
               {/* Name */}
               <div style={{flex:1, minWidth:0}}>
                 <div style={{fontWeight:600, fontSize:13, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{r.name}</div>
-                <div className="muted" style={{fontSize:11}}>{hasRank ? `${r.calls} зв.` : 'нет звонков'}</div>
+                <div className="muted" style={{fontSize:12}}>{hasRank ? `${r.calls} зв.` : 'нет звонков'}</div>
               </div>
 
               {/* Value */}
@@ -556,11 +556,11 @@ function RatingCard({ title, rows, valueKey, maxVal, suffix, onOpen }) {
               {/* Delta */}
               <div style={{width:26, flexShrink:0, textAlign:'right'}}>
                 {hasRank && delta != null && delta !== 0
-                  ? <span style={{fontSize:11, fontWeight:700, display:'inline-flex', alignItems:'center', gap:1,
+                  ? <span style={{fontSize:12, fontWeight:700, display:'inline-flex', alignItems:'center', gap:1,
                       color: delta > 0 ? 'var(--success-strong)' : 'var(--danger-strong)'}}>
                       {delta > 0 ? <Icon.arrowUp size={9}/> : <Icon.arrowDown size={9}/>}{Math.abs(delta)}
                     </span>
-                  : <span style={{fontSize:10, color:'var(--muted-foreground)'}}>—</span>
+                  : <span style={{fontSize:11, color:'var(--muted-foreground)'}}>—</span>
                 }
               </div>
             </div>
@@ -649,9 +649,9 @@ function ManagerModal({ manager, queueItems, onClose, onCreateTask }) {
         <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, padding:'20px 24px 4px'}}>
           {stats.map(s => (
             <div key={s.label} style={{background:'var(--secondary)', borderRadius:10, padding:'12px 14px'}}>
-              <div className="muted" style={{fontSize:11.5, marginBottom:4}}>{s.label}</div>
+              <div className="muted" style={{fontSize:12, marginBottom:4}}>{s.label}</div>
               <div style={{fontSize:22, fontWeight:700, fontVariantNumeric:'tabular-nums', color: s.color || 'var(--foreground)', lineHeight:1.1}}>{s.value}</div>
-              <div className="muted" style={{fontSize:11, marginTop:2}}>{s.sub}</div>
+              <div className="muted" style={{fontSize:12, marginTop:2}}>{s.sub}</div>
             </div>
           ))}
         </div>
@@ -659,7 +659,7 @@ function ManagerModal({ manager, queueItems, onClose, onCreateTask }) {
         {/* Sparkline trend */}
         {manager.trend && manager.trend.length > 0 && (
           <div style={{padding:'16px 24px 8px'}}>
-            <div className="muted" style={{fontSize:11.5, marginBottom:8, fontWeight:500}}>Динамика конверсии за 7 дней</div>
+            <div className="muted" style={{fontSize:12, marginBottom:8, fontWeight:500}}>Динамика конверсии за 7 дней</div>
             <Sparkline data={manager.trend} color={manager.score >= 4 ? '#16A34A' : manager.score >= 3 ? '#D97706' : '#DC2626'} width={560} height={44}/>
           </div>
         )}
@@ -756,11 +756,11 @@ function ManagersTable({ rows, onOpen }) {
                 {/* Sticky name cell */}
                 <td style={{position:'sticky', left:0, background:'var(--card)', zIndex:1, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
                   <div style={{fontWeight:600}}>{m.name}</div>
-                  <div className="muted" style={{fontSize:11}}>{m.role || 'Менеджер'}</div>
+                  <div className="muted" style={{fontSize:12}}>{m.role || 'Менеджер'}</div>
                 </td>
                 <td className="tar">
                   <span style={{fontWeight:600, fontVariantNumeric:'tabular-nums'}}>{m.calls}</span>
-                  <span className="muted" style={{fontSize:11}}> /{m.plan}</span>
+                  <span className="muted" style={{fontSize:12}}> /{m.plan}</span>
                 </td>
                 <td className="tar">
                   <span style={{fontVariantNumeric:'tabular-nums'}}>{m.success ?? '—'}</span>

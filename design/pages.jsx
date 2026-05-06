@@ -336,7 +336,7 @@ function ProcessedPage({ data, onOpenCall }) {
                 <td className="muted" style={{fontSize:12}}>{p.date}</td>
                 <td>
                   <div style={{fontWeight:500}}>{p.problem}</div>
-                  <div className="muted" style={{fontSize:11.5, marginTop:2}}>Звонок #{p.callId}</div>
+                  <div className="muted" style={{fontSize:12, marginTop:2}}>Звонок #{p.callId}</div>
                 </td>
                 <td>
                   <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -381,12 +381,12 @@ function AnalyticsPage({ data, period, setPeriod }) {
         <Card className="kpi-card">
           <div className="kpi-label">Звонков за период</div>
           <div className="kpi-value-row"><div className="kpi-value">487</div></div>
-          <div className="kpi-meta"><Delta value={12} suffix="%"/><span className="muted" style={{fontSize:11}}>vs пред. период</span></div>
+          <div className="kpi-meta"><Delta value={12} suffix="%"/><span className="muted" style={{fontSize:12}}>vs пред. период</span></div>
         </Card>
         <Card className="kpi-card">
           <div className="kpi-label">Ср. длительность</div>
           <div className="kpi-value-row"><div className="kpi-value">6:24</div></div>
-          <div className="kpi-meta"><Delta value={-8} suffix="%"/><span className="muted" style={{fontSize:11}}>сократилась</span></div>
+          <div className="kpi-meta"><Delta value={-8} suffix="%"/><span className="muted" style={{fontSize:12}}>сократилась</span></div>
         </Card>
         <Card className="kpi-card">
           <div className="kpi-label">Воронка → продажа</div>

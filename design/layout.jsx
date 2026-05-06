@@ -92,7 +92,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
             <span style={{fontSize:15,fontWeight:700}}>Уведомления</span>
             {unread > 0 && (
               <span style={{background:'var(--danger)',color:'#fff',borderRadius:10,
-                padding:'1px 7px',fontSize:11,fontWeight:700}}>{unread}</span>
+                padding:'1px 7px',fontSize:12,fontWeight:700}}>{unread}</span>
             )}
           </div>
           <div style={{display:'flex',alignItems:'center',gap:6}}>
@@ -100,7 +100,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
               <button
                 onClick={onMarkAllRead}
                 style={{background:'none',border:'1px solid var(--border)',cursor:'pointer',
-                  padding:'4px 10px',borderRadius:6,fontSize:11.5,fontWeight:500,
+                  padding:'4px 10px',borderRadius:6,fontSize:12,fontWeight:500,
                   color:'var(--muted-foreground)',whiteSpace:'nowrap',display:'flex',
                   alignItems:'center',gap:5}}
               >
@@ -155,12 +155,12 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
                     <span style={{
                       background: isP1 ? '#FEE2E2' : '#DBEAFE',
                       color: accentColor,
-                      borderRadius:4, padding:'1px 7px', fontSize:10, fontWeight:700,
+                      borderRadius:4, padding:'1px 7px', fontSize:11, fontWeight:700,
                       letterSpacing:.2,
                     }}>
                       {isP1 ? 'Приоритет 1' : 'Дайджест'}
                     </span>
-                    <span style={{fontSize:11,color:'var(--muted-foreground)',whiteSpace:'nowrap'}}>
+                    <span style={{fontSize:12,color:'var(--muted-foreground)',whiteSpace:'nowrap'}}>
                       {n.time}
                     </span>
                   </div>
@@ -173,7 +173,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
                   </div>
 
                   {/* Body */}
-                  <div style={{fontSize:11.5,color:'var(--muted-foreground)',lineHeight:1.45,marginBottom:n.callId||n.manager?7:0}}>
+                  <div style={{fontSize:12,color:'var(--muted-foreground)',lineHeight:1.45,marginBottom:n.callId||n.manager?7:0}}>
                     {n.body}
                   </div>
 
@@ -183,7 +183,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
                       {n.manager && (
                         <div style={{display:'flex',alignItems:'center',gap:5}}>
                           <Avatar name={n.manager} size={16} style={{flexShrink:0}}/>
-                          <span style={{fontSize:11.5,color:'var(--muted-foreground)',fontWeight:500}}>
+                          <span style={{fontSize:12,color:'var(--muted-foreground)',fontWeight:500}}>
                             {n.manager}
                           </span>
                         </div>
@@ -192,7 +192,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
                         <button
                           onClick={e => { e.stopPropagation(); onMarkRead(n.id); onOpenCall(n.callId); }}
                           style={{background:'none',border:'1px solid var(--border)',cursor:'pointer',
-                            padding:'3px 9px',borderRadius:5,fontSize:11.5,fontWeight:500,
+                            padding:'3px 9px',borderRadius:5,fontSize:12,fontWeight:500,
                             color:'var(--primary)',display:'flex',alignItems:'center',gap:5,
                             marginLeft:'auto'}}
                         >
@@ -216,11 +216,11 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
         {/* Footer */}
         <div style={{borderTop:'1px solid var(--border)',padding:'10px 16px',
           flexShrink:0,background:'#FAFAFA'}}>
-          <div style={{fontSize:11,color:'var(--muted-foreground)',lineHeight:1.5}}>
+          <div style={{fontSize:12,color:'var(--muted-foreground)',lineHeight:1.5}}>
             <span style={{fontWeight:600,color:'var(--foreground)'}}>Приоритет 1</span> — мгновенно &nbsp;·&nbsp;
             <span style={{fontWeight:600,color:'var(--foreground)'}}>Дайджест</span> — каждые 30 мин
           </div>
-          <div style={{fontSize:10.5,color:'var(--muted-foreground)',marginTop:3}}>
+          <div style={{fontSize:11,color:'var(--muted-foreground)',marginTop:3}}>
             Также дублируется в Telegram / почту
           </div>
         </div>
