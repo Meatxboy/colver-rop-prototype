@@ -201,6 +201,8 @@ function App() {
       }}>
         <Icon.check size={14}/> {toast}
       </div>}
+
+      <CookieBanner/>
     </div>
   );
 }

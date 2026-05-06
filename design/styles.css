@@ -827,6 +827,46 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .tweak-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .tweak-label { font-size: 12px; color: var(--foreground); font-weight: 500; }
 
+/* Cookie consent banner (rule 6) — bottom strip, doesn't block interaction. */
+.cookie-banner {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .12);
+  animation: slideUp .25s ease;
+}
+.cookie-banner-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--foreground);
+  line-height: 1.5;
+}
+.cookie-banner-text a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.cookie-banner-text a:hover { text-decoration: underline; }
+.cookie-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+@media (max-width: 720px) {
+  .cookie-banner { flex-direction: column; align-items: stretch; gap: 12px; }
+  .cookie-banner-actions { justify-content: flex-end; }
+}
+
 /* utility */
 .row { display: flex; align-items: center; gap: 8px; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
