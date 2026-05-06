@@ -1,5 +1,5 @@
 // ── Dashboard page ────────────────────────────────────────────────────────
-function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProcess, onCreateTask }) {
+function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProcess, onCreateTask, tasks, onOpenTask }) {
   const { kpis, queue, queueManagement, queuePractices, managers, lossReasons, objections, callsToday, ratings = { byScore:[], byConv:[] } } = data;
   const [queueTab, setQueueTab] = useState('attention');
   const [managerModalId, setManagerModalId] = useState(null);
@@ -42,7 +42,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
             </div>
           </div>
         </CardHeader>
-        {queueTab === 'attention' && <AttentionQueue items={queue} onOpenCall={onOpenCall} onProcess={onProcess} onCreateTask={onCreateTask}/>}
+        {queueTab === 'attention' && <AttentionQueue items={queue} onOpenCall={onOpenCall} onProcess={onProcess} onCreateTask={onCreateTask} tasks={tasks} onOpenTask={onOpenTask}/>}
         {queueTab === 'management' && <ManagementQueue items={queueManagement} onProcess={onProcess}/>}
         {queueTab === 'practices' && <PracticesQueue items={queuePractices}/>}
       </Card>
@@ -263,11 +263,58 @@ function QueuePager({ total, page, pageSize, setPage, setPageSize, totalPages })
   );
 }
 
+// Strip 'C-' prefix so queue.callId ('C-1841') matches task.callId ('1841').
+const normCallId = (id) => String(id || '').replace(/^C-/, '');
+// Find an OPEN task linked to a call (planned/queued/in_progress/paused).
+const findOpenTask = (tasks, callId) => {
+  if (!tasks || !callId) return null;
+  const target = normCallId(callId);
+  return tasks.find(t => normCallId(t.callId) === target && t.status !== 'done' && t.status !== 'partial') || null;
+};
+
+// ── Resolve modal — optional comment when marking a queue case as resolved ──
+function ResolveModal({ item, onClose, onConfirm }) {
+  const [comment, setComment] = useState('');
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+  return (
+    <div style={{position:'fixed', inset:0, zIndex:400, background:'rgba(9,9,11,.45)', backdropFilter:'blur(2px)',
+      display:'flex', alignItems:'center', justifyContent:'center', padding:'24px'}}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{background:'#fff', borderRadius:12, width:'100%', maxWidth:480, boxShadow:'0 24px 64px rgba(0,0,0,.18)', overflow:'hidden'}}>
+        <div style={{padding:'14px 20px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+          <div style={{fontSize:16, fontWeight:700}}>Отметить решённым</div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',padding:6,borderRadius:6,color:'var(--muted-foreground)',display:'flex',alignItems:'center'}} aria-label="Закрыть">
+            <Icon.x size={16}/>
+          </button>
+        </div>
+        <div style={{padding:'18px 20px', display:'flex', flexDirection:'column', gap:12}}>
+          <div className="muted" style={{fontSize:13}}>{item.problem}</div>
+          <label style={{display:'flex', flexDirection:'column', gap:6}}>
+            <span style={{fontSize:13, fontWeight:500}}>Комментарий <span className="muted" style={{fontWeight:400}}>(необязательно)</span></span>
+            <textarea value={comment} onChange={(e) => setComment(e.target.value)}
+              placeholder="Например: разобрали с менеджером, скорректировали скрипт"
+              rows={4}
+              style={{font:'inherit', fontSize:14, padding:'10px 12px', border:'1px solid var(--border)', borderRadius:8, resize:'vertical', minHeight:80, background:'var(--muted)'}}/>
+          </label>
+        </div>
+        <div style={{padding:'12px 20px', borderTop:'1px solid var(--border)', display:'flex', gap:8, justifyContent:'flex-end'}}>
+          <Button variant="ghost" onClick={onClose}>Отмена</Button>
+          <Button variant="success" onClick={() => onConfirm(comment.trim() || null)}><Icon.check size={14}/> Отметить решённым</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Attention Queue ──────────────────────────────────────────────────────
-function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask }) {
-  const [expanded, setExpanded] = useState(items[0]?.id ?? null);
+function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onOpenTask }) {
+  const [expanded, setExpanded] = useState(null); // no row expanded by default
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
+  const [resolveItem, setResolveItem] = useState(null);
 
   // Tri-state sort by Приоритет / Менеджер / Балл / Давность (rule 3).
   const { sortKey, sortDir, sortBy } = useTriStateSort();
@@ -290,51 +337,68 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask }) {
   }
   return (
     <div>
-      <table className="data-table">
+      <table className="data-table queue-table">
         <thead>
           <tr>
-            <th style={{width:60}} className="sortable" onClick={()=>onSort('priority')}>Приор.<SortIndicator active={sortKey==='priority'} dir={sortDir}/></th>
+            <th style={{width:54}} className="sortable" onClick={()=>onSort('priority')}>Приор.<SortIndicator active={sortKey==='priority'} dir={sortDir}/></th>
             <th>Звонок · проблема</th>
-            <th style={{width:130}} className="sortable" onClick={()=>onSort('manager')}>Менеджер<SortIndicator active={sortKey==='manager'} dir={sortDir}/></th>
-            <th style={{width:80,textAlign:'center'}} className="sortable" onClick={()=>onSort('score')}>Балл<SortIndicator active={sortKey==='score'} dir={sortDir}/></th>
-            <th style={{width:110,textAlign:'right'}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
-            <th style={{width:200,textAlign:'right'}}>Действия</th>
+            <th style={{width:220}} className="sortable" onClick={()=>onSort('manager')}>Менеджер<SortIndicator active={sortKey==='manager'} dir={sortDir}/></th>
+            <th style={{width:64}} className="sortable" onClick={()=>onSort('score')}>Балл<SortIndicator active={sortKey==='score'} dir={sortDir}/></th>
+            <th style={{width:110}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
+            <th style={{width:42}} aria-label=""></th>
           </tr>
         </thead>
         <tbody>
-          {pagedItems.map(item => (
+          {pagedItems.map(item => {
+            const openTask = findOpenTask(tasks, item.callId);
+            const isOpen = expanded === item.id;
+            return (
             <QFrag key={item.id}>
-              <tr className="queue-row is-clickable" onClick={()=>setExpanded(expanded===item.id?null:item.id)}>
+              <tr className={cn('queue-row is-clickable', isOpen && 'is-expanded')} onClick={()=>setExpanded(isOpen?null:item.id)}>
                 <td><PriorityBadge p={item.priority}/></td>
                 <td className="problem-cell">
                   <div className="problem-title">{item.problem}</div>
                   <div className="problem-sub">{item.subTitle || `Клиент ${item.client}`}</div>
                 </td>
                 <td>
-                  <span style={{fontWeight:600}}>{item.manager}</span>
-                </td>
-                <td className="tac"><ScoreCell value={item.score} max={5}/></td>
-                <td className="tar age-cell">
-                  <span style={{display:'inline-flex', alignItems:'center', gap:4, justifyContent:'flex-end', whiteSpace:'nowrap'}}>
-                    <CallDirectionIcon direction={item.direction} answered={item.answered}/>
-                    <span className={item.ageMin <= 30 ? 'age-fresh' : ''}>{item.age}</span>
+                  <span style={{display:'inline-flex', alignItems:'center', gap:6}}>
+                    <span style={{fontWeight:600}}>{item.manager}</span>
+                    {openTask && (
+                      <button
+                        type="button"
+                        className="task-indicator"
+                        title={`Есть открытая задача · ${openTask.id}`}
+                        onClick={(e) => { e.stopPropagation(); onOpenTask && onOpenTask(openTask); }}>
+                        <Icon.taskBadge size={13}/>
+                      </button>
+                    )}
                   </span>
                 </td>
-                <td className="tar">
-                  <div className="actions-cell">
-                    <Button size="md" variant="outline" onClick={(e)=>{e.stopPropagation(); setExpanded(expanded===item.id?null:item.id);}}>
-                      Открыть {expanded===item.id ? <Icon.chevUp size={14}/> : <Icon.chevDown size={14}/>}
-                    </Button>
-                  </div>
+                <td><ScoreCell value={item.score} max={5}/></td>
+                <td className="age-cell">
+                  <span style={{display:'inline-flex', alignItems:'center', gap:4, whiteSpace:'nowrap'}}>
+                    <CallDirectionIcon direction={item.direction} answered={item.answered}/>
+                    <span className={item.ageMin <= 30 ? 'age-fresh' : ''}>{formatAge(item.ageMin)}</span>
+                  </span>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="row-toggle"
+                    aria-label={isOpen ? 'Свернуть' : 'Развернуть'}
+                    title={isOpen ? 'Свернуть' : 'Развернуть'}
+                    onClick={(e)=>{e.stopPropagation(); setExpanded(isOpen?null:item.id);}}>
+                    {isOpen ? <Icon.chevUp size={16}/> : <Icon.chevDown size={16}/>}
+                  </button>
                 </td>
               </tr>
-              {expanded === item.id && (
+              {isOpen && (
                 <tr>
                   <td colSpan={6} style={{padding:0}}>
                     <div className="queue-expanded">
                       <div style={{display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:14}}>
                         <div className="recommendation-block">
-                          <div className="recommendation-label"><Icon.ai size={11}/> Рекомендация AI</div>
+                          <div className="recommendation-label"><Icon.ai size={11}/> Рекомендация нейроаналитика</div>
                           <div className="recommendation-text">{item.recommendation}</div>
                         </div>
                         <div>
@@ -346,24 +410,35 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask }) {
                         <Button size="lg" variant="default" onClick={()=>onOpenCall(item.callId)}><Icon.phone size={14}/> Открыть звонок</Button>
                         <Button size="lg" variant="outline" onClick={()=>onCreateTask && onCreateTask({ manager: item.manager, callId: item.callId, title: item.problem, priority: item.priority <= 1 ? 'high' : 'medium' })}><Icon.calendar size={14}/> Поставить задачу менеджеру</Button>
                         <div style={{flex:1}}></div>
-                        <Button size="lg" variant="success" onClick={()=>onProcess(item.id, 'done')}><Icon.check size={14}/> Отметить решённым</Button>
+                        <Button size="lg" variant="success" onClick={()=>setResolveItem(item)}><Icon.check size={14}/> Отметить решённым</Button>
                       </div>
                     </div>
                   </td>
                 </tr>
               )}
             </QFrag>
-          ))}
+          );
+          })}
         </tbody>
       </table>
       <QueuePager total={items.length} page={page} pageSize={pageSize} setPage={setPage} setPageSize={handleSetPageSize} totalPages={totalPages}/>
+      {resolveItem && (
+        <ResolveModal
+          item={resolveItem}
+          onClose={() => setResolveItem(null)}
+          onConfirm={(comment) => {
+            setResolveItem(null);
+            onProcess(resolveItem.id, 'done', comment);
+          }}
+        />
+      )}
     </div>
   );
 }
 
 // ── Управленческие решения ───────────────────────────────────────────────
 function ManagementQueue({ items, onProcess }) {
-  const [expanded, setExpanded] = useState(items[0]?.id ?? null);
+  const [expanded, setExpanded] = useState(null); // no row expanded by default
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
 
@@ -381,39 +456,44 @@ function ManagementQueue({ items, onProcess }) {
   if (!items.length) return <EmptyState icon={<Icon.check size={26}/>} title="Нет открытых решений" desc="Системные сбои и нестандартные кейсы появятся здесь."/>;
   return (
     <div>
-      <table className="data-table">
+      <table className="data-table queue-table">
         <thead>
           <tr>
-            <th style={{width:60}} className="sortable" onClick={()=>onSort('priority')}>Приор.<SortIndicator active={sortKey==='priority'} dir={sortDir}/></th>
+            <th style={{width:54}} className="sortable" onClick={()=>onSort('priority')}>Приор.<SortIndicator active={sortKey==='priority'} dir={sortDir}/></th>
             <th>Тип · описание</th>
-            <th style={{width:160}} className="sortable" onClick={()=>onSort('employee')}>Затронутые<SortIndicator active={sortKey==='employee'} dir={sortDir}/></th>
-            <th style={{width:90,textAlign:'right'}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
-            <th style={{width:120,textAlign:'right'}}>Действия</th>
+            <th style={{width:220}} className="sortable" onClick={()=>onSort('employee')}>Затронутые<SortIndicator active={sortKey==='employee'} dir={sortDir}/></th>
+            <th style={{width:110}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
+            <th style={{width:42}} aria-label=""></th>
           </tr>
         </thead>
         <tbody>
-          {pagedItems.map(item => (
+          {pagedItems.map(item => {
+            const isOpen = expanded === item.id;
+            return (
             <QFrag key={item.id}>
-              <tr className="queue-row is-clickable" onClick={()=>setExpanded(expanded===item.id?null:item.id)}>
+              <tr className={cn('queue-row is-clickable', isOpen && 'is-expanded')} onClick={()=>setExpanded(isOpen?null:item.id)}>
                 <td><PriorityBadge p={item.priority}/></td>
                 <td className="problem-cell">
                   <div className="problem-title">{item.type}</div>
                   <div className="problem-sub">{item.desc}</div>
                 </td>
                 <td><span style={{fontWeight:500}}>{item.employee}</span></td>
-                <td className="tar age-cell"><span className={item.age && item.age.includes('мин') ? 'age-fresh' : ''}>{item.age}</span></td>
-                <td className="tar">
-                  <div className="actions-cell">
-                    <Button size="sm" variant="ghost" onClick={(e)=>{e.stopPropagation(); setExpanded(expanded===item.id?null:item.id);}}>{expanded===item.id ? <Icon.chevUp size={13}/> : <Icon.chevDown size={13}/>}</Button>
-                  </div>
+                <td className="age-cell"><span className={item.age && item.age.includes('мин') ? 'age-fresh' : ''}>{formatAge(item.ageMin)}</span></td>
+                <td>
+                  <button type="button" className="row-toggle"
+                    aria-label={isOpen ? 'Свернуть' : 'Развернуть'}
+                    title={isOpen ? 'Свернуть' : 'Развернуть'}
+                    onClick={(e)=>{e.stopPropagation(); setExpanded(isOpen?null:item.id);}}>
+                    {isOpen ? <Icon.chevUp size={16}/> : <Icon.chevDown size={16}/>}
+                  </button>
                 </td>
               </tr>
-              {expanded === item.id && (
+              {isOpen && (
                 <tr>
                   <td colSpan={5} style={{padding:0}}>
                     <div className="queue-expanded">
                       <div className="recommendation-block">
-                        <div className="recommendation-label"><Icon.ai size={11}/> Рекомендация AI</div>
+                        <div className="recommendation-label"><Icon.ai size={11}/> Рекомендация нейроаналитика</div>
                         <div className="recommendation-text">{item.recommendation}</div>
                       </div>
                       <div className="expanded-actions">
@@ -427,7 +507,8 @@ function ManagementQueue({ items, onProcess }) {
                 </tr>
               )}
             </QFrag>
-          ))}
+          );
+          })}
         </tbody>
       </table>
       <QueuePager total={items.length} page={page} pageSize={pageSize} setPage={setPage} setPageSize={(s)=>{setPageSize(s);setPage(0);setExpanded(null);}} totalPages={totalPages}/>
@@ -437,7 +518,7 @@ function ManagementQueue({ items, onProcess }) {
 
 // ── Лучшие практики ──────────────────────────────────────────────────────
 function PracticesQueue({ items }) {
-  const [expanded, setExpanded] = useState(items[0]?.id ?? null);
+  const [expanded, setExpanded] = useState(null); // no row expanded by default
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
@@ -446,34 +527,39 @@ function PracticesQueue({ items }) {
   if (!items.length) return <EmptyState icon={<Icon.ai size={26}/>} title="Пока нет находок" desc="AI продолжает искать эталонные приёмы в звонках команды."/>;
   return (
     <div>
-      <table className="data-table">
+      <table className="data-table queue-table">
         <thead>
           <tr>
             <th>Практика</th>
-            <th style={{width:160}}>Автор</th>
-            <th style={{width:110,textAlign:'right'}}>Δ конверсии</th>
-            <th style={{width:90,textAlign:'right'}}>Звонков</th>
-            <th style={{width:120,textAlign:'right'}}>Действия</th>
+            <th style={{width:220}}>Автор</th>
+            <th style={{width:120}}>Δ конверсии</th>
+            <th style={{width:90}}>Звонков</th>
+            <th style={{width:42}} aria-label=""></th>
           </tr>
         </thead>
         <tbody>
-          {pagedItems.map(item => (
+          {pagedItems.map(item => {
+            const isOpen = expanded === item.id;
+            return (
             <QFrag key={item.id}>
-              <tr className="queue-row is-clickable" onClick={()=>setExpanded(expanded===item.id?null:item.id)}>
+              <tr className={cn('queue-row is-clickable', isOpen && 'is-expanded')} onClick={()=>setExpanded(isOpen?null:item.id)}>
                 <td className="problem-cell">
                   <div className="problem-title">{item.title}</div>
                   <div className="problem-sub">{item.desc}</div>
                 </td>
                 <td><span style={{fontWeight:500}}>{item.author}</span></td>
-                <td className="tar"><Delta value={parseFloat(item.convGrowth)} suffix="%"/></td>
-                <td className="tar" style={{fontVariantNumeric:'tabular-nums'}}>{item.calls}</td>
-                <td className="tar">
-                  <div className="actions-cell">
-                    <Button size="sm" variant="ghost" onClick={(e)=>{e.stopPropagation(); setExpanded(expanded===item.id?null:item.id);}}>{expanded===item.id ? <Icon.chevUp size={13}/> : <Icon.chevDown size={13}/>}</Button>
-                  </div>
+                <td><Delta value={parseFloat(item.convGrowth)} suffix="%"/></td>
+                <td style={{fontVariantNumeric:'tabular-nums'}}>{item.calls}</td>
+                <td>
+                  <button type="button" className="row-toggle"
+                    aria-label={isOpen ? 'Свернуть' : 'Развернуть'}
+                    title={isOpen ? 'Свернуть' : 'Развернуть'}
+                    onClick={(e)=>{e.stopPropagation(); setExpanded(isOpen?null:item.id);}}>
+                    {isOpen ? <Icon.chevUp size={16}/> : <Icon.chevDown size={16}/>}
+                  </button>
                 </td>
               </tr>
-              {expanded === item.id && (
+              {isOpen && (
                 <tr>
                   <td colSpan={5} style={{padding:0}}>
                     <div className="queue-expanded">
@@ -490,7 +576,8 @@ function PracticesQueue({ items }) {
                 </tr>
               )}
             </QFrag>
-          ))}
+          );
+          })}
         </tbody>
       </table>
       <QueuePager total={items.length} page={page} pageSize={pageSize} setPage={setPage} setPageSize={(s)=>{setPageSize(s);setPage(0);setExpanded(null);}} totalPages={totalPages}/>

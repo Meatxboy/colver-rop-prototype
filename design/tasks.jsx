@@ -676,4 +676,4 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, data }) {
   );
 }
 
-Object.assign(window, { TasksPage, TaskCreateModal, initTasks });
+Object.assign(window, { TasksPage, TaskCreateModal, TaskDetailModal, initTasks });

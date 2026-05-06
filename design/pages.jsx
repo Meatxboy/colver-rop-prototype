@@ -128,7 +128,7 @@ function CallDetail({ call, data, onBack, onOpenManager }) {
 }
 
 // ── Call Modal (открывает карточку звонка поверх текущей страницы) ────────
-function CallModal({ callId, data, onClose, onCreateTask }) {
+function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
   const baseCall = data.calls.find(c => c.id === callId) || data.calls[0];
   const detail   = data.callDetails[callId] || data.callDetails[data.calls[0]?.id] || {};
   const call     = { ...baseCall, ...detail };
@@ -148,6 +148,9 @@ function CallModal({ callId, data, onClose, onCreateTask }) {
   const scoreClass = scoreV10 >= 8 ? 'is-good' : scoreV10 >= 6 ? 'is-warn' : scoreV10 >= 4 ? 'is-default' : 'is-bad';
   const mainRec   = (call.recommendations || [])[0];
   const otherClient = call.client;
+  // Open-task indicator (matches the dashboard one). Strip C- prefix like adapter does.
+  const norm = (id) => String(id || '').replace(/^C-/, '');
+  const openTask = (tasks || []).find(t => norm(t.callId) === norm(call.id || callId) && t.status !== 'done' && t.status !== 'partial') || null;
 
   return (
     <div
@@ -168,6 +171,14 @@ function CallModal({ callId, data, onClose, onCreateTask }) {
             </span>
           </div>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            {openTask && (
+              <button type="button" className="task-indicator is-chip"
+                title={`Перейти к задаче · ${openTask.id}`}
+                onClick={() => onOpenTask && onOpenTask(openTask)}>
+                <Icon.taskBadge size={13}/>
+                <span>Есть задача</span>
+              </button>
+            )}
             <Button variant="outline" size="md"><Icon.download size={13}/> Экспорт</Button>
             <Button variant="default" size="md"><Icon.send size={13}/> Обратная связь</Button>
             <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',padding:6,

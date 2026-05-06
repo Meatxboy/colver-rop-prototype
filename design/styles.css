@@ -761,6 +761,46 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .data-table tr.is-clickable:hover { background: #EFF4FF !important; }
 .data-table tr.is-expanded { background: #EFF4FF !important; }
 
+/* ── Queue tables (Требуют внимания / Управленческие / Лучшие практики) ─
+   All queue tables share .queue-table — every column is left-aligned so
+   header text and cell content sit on the same vertical guide line. */
+.queue-table th, .queue-table td { text-align: left; }
+.queue-table th { vertical-align: middle; }
+/* Active (clicked) row gets the same soft-blue fill as the expanded panel,
+   so the currently-open row is visually highlighted. */
+.data-table tr.queue-row.is-expanded > td { background: #EFF4FF; }
+.data-table tr.queue-row.is-expanded:hover > td { background: #E1EAFE !important; }
+
+/* Chevron-only row toggle (no "Открыть" text). */
+.row-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: #fff; color: var(--muted-foreground); cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.row-toggle:hover { background: var(--secondary); color: var(--foreground); border-color: var(--border-strong); }
+
+/* "Has open task" indicator. Small button next to manager name in queue rows;
+   chip variant in CallModal header. */
+.task-indicator {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  border: 1px solid var(--warning); background: var(--warning-soft);
+  color: var(--warning-strong);
+  border-radius: 999px;
+  cursor: pointer;
+  padding: 0;
+  transition: background .12s;
+}
+.task-indicator:hover { background: #FDE68A; }
+.task-indicator.is-chip {
+  width: auto; height: 28px;
+  padding: 0 10px; gap: 5px;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+}
+
 /* ── Attention queue ─────────────────────────────────────────────────── */
 .queue-row .problem-cell { max-width: 360px; }
 .queue-row .problem-title { font-weight: 600; color: var(--foreground); margin-bottom: 3px; font-size: var(--table-font-size); }

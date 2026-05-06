@@ -13,12 +13,22 @@ function App() {
   // ── Tasks state (lifted so modal is accessible from Dashboard + CallModal) ──
   const [tasks, setTasks] = useState(() => initTasks(window.MOCK_DATA));
   const [createTaskPrefill, setCreateTaskPrefill] = useState(null); // null = closed
+  const [taskDetailId, setTaskDetailId] = useState(null);            // null = closed
 
   const openCreateTask = (prefill = {}) => setCreateTaskPrefill(prefill);
   const closeCreateTask = () => setCreateTaskPrefill(null);
+  const openTaskDetail = (taskOrId) => setTaskDetailId(typeof taskOrId === 'string' ? taskOrId : taskOrId?.id);
+  const closeTaskDetail = () => setTaskDetailId(null);
+  const taskDetailObj = tasks.find(t => t.id === taskDetailId) || null;
   const handleSaveTask = (task) => {
     setTasks(ts => [task, ...ts]);
     showToast('Задача создана');
+  };
+  const handleUpdateTask = (task) => {
+    setTasks(ts => ts.map(t => t.id === task.id ? task : t));
+  };
+  const handleDeleteTask = (id) => {
+    setTasks(ts => ts.filter(t => t.id !== id));
   };
 
   // ── Notifications ──────────────────────────────────────────────────────
@@ -93,7 +103,7 @@ function App() {
     setTimeout(()=>setToast(null), 2400);
   };
 
-  const handleProcess = (queueItemId, action) => {
+  const handleProcess = (queueItemId, action, comment = null) => {
     setData(d => ({
       ...d,
       queue: d.queue.filter(i => i.id !== queueItemId),
@@ -104,6 +114,7 @@ function App() {
           problem: d.queue.find(i => i.id === queueItemId)?.problem,
           manager: d.queue.find(i => i.id === queueItemId)?.manager,
           action,
+          comment: comment || undefined,
           rop: 'Алексей П.',
           date: 'сейчас',
           outcome: 'pending',
@@ -111,7 +122,10 @@ function App() {
         ...d.processed,
       ]
     }));
-    showToast(action === 'feedback' ? 'Обратная связь отправлена менеджеру' : action === 'meeting' ? 'Разбор назначен на завтра 14:00' : 'Кейс закрыт');
+    const baseMsg = action === 'feedback' ? 'Обратная связь отправлена менеджеру'
+      : action === 'meeting' ? 'Разбор назначен на завтра 14:00'
+      : 'Кейс закрыт';
+    showToast(comment ? `${baseMsg} · комментарий сохранён` : baseMsg);
   };
 
   // ── Modal visibility rules ─────────────────────────────────────────────
@@ -123,7 +137,7 @@ function App() {
   let pageContent = null;
   let breadcrumbs = null;
   if (route.page === 'dashboard') {
-    pageContent = <Dashboard data={dashboardData} onOpenCall={openCall} onOpenManager={openManager} period={period} setPeriod={setPeriod} onProcess={handleProcess} onCreateTask={openCreateTask}/>;
+    pageContent = <Dashboard data={dashboardData} onOpenCall={openCall} onOpenManager={openManager} period={period} setPeriod={setPeriod} onProcess={handleProcess} onCreateTask={openCreateTask} tasks={tasks} onOpenTask={openTaskDetail}/>;
   } else if (route.page === 'calls') {
     pageContent = <CallsPage data={data} onOpenCall={openCall} period={period} setPeriod={setPeriod}/>;
     breadcrumbs = [{ label:'Звонки' }];
@@ -175,7 +189,8 @@ function App() {
       {/* Call modal (z:300) — hidden when TaskCreateModal is on top */}
       {callModalId && (
         <div style={callModalHidden ? {visibility:'hidden',pointerEvents:'none'} : {}}>
-          <CallModal callId={callModalId} data={data} onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}/>
+          <CallModal callId={callModalId} data={data} tasks={tasks} onOpenTask={openTaskDetail}
+            onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}/>
         </div>
       )}
 
@@ -186,6 +201,18 @@ function App() {
           managers={data.managers}
           onClose={closeCreateTask}
           onSave={handleSaveTask}
+          onOpenCall={openCall}
+        />
+      )}
+
+      {/* Task detail modal — global, opened from queue task indicator */}
+      {taskDetailObj && (
+        <TaskDetailModal
+          task={taskDetailObj}
+          managers={data.managers}
+          onClose={closeTaskDetail}
+          onSave={handleUpdateTask}
+          onDelete={handleDeleteTask}
           onOpenCall={openCall}
         />
       )}

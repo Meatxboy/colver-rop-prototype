@@ -46,7 +46,26 @@ const Icon = {
   user: (p={}) => <svg width={p.size||14} height={p.size||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   edit: (p={}) => <svg width={p.size||13} height={p.size||13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   clock: (p={}) => <svg width={p.size||13} height={p.size||13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  // Open-task indicator: clipboard + check
+  taskBadge: (p={}) => <svg width={p.size||14} height={p.size||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M9 14l2 2 4-4"/></svg>,
 };
+
+// ── Age formatter (rounded display) ──────────────────────────────────────
+// < 60 min → "X мин."   ; < 24h → "X ч."  (math-rounded) ; else → "X день/дня/дней"
+function ruDayWord(n) {
+  const m100 = n % 100, m10 = n % 10;
+  if (m100 >= 11 && m100 <= 14) return 'дней';
+  if (m10 === 1) return 'день';
+  if (m10 >= 2 && m10 <= 4) return 'дня';
+  return 'дней';
+}
+function formatAge(min) {
+  const m = Math.max(0, Math.round(min || 0));
+  if (m < 60) return `${m} мин.`;
+  if (m < 60 * 24) return `${Math.round(m / 60)} ч.`;
+  const d = Math.round(m / (60 * 24));
+  return `${d} ${ruDayWord(d)}`;
+}
 
 // ── Atoms ──────────────────────────────────────────────────────────────────
 const Button = ({ variant='default', size='md', className='', children, ...props }) => {
@@ -613,4 +632,5 @@ Object.assign(window, {
   Tabs, Avatar, Progress, ScoreCell, PercentCell, Delta, Sparkline, Tooltip,
   Switch, Select, PeriodSelector, Pagination, EmptyState, Modal,
   useTriStateSort, SortIndicator, applyTriStateSort, CallDirectionIcon,
+  formatAge,
 });
