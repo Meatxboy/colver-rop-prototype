@@ -106,7 +106,7 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
   const datetimeCell = p => {
     const icon = directionCell({ data: p.data });
     const text = p.value || '';
-    return `<span style="display:inline-flex;align-items:center;gap:8px;white-space:nowrap">${icon}<span>${text}</span></span>`;
+    return `<span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap">${icon}<span>${text}</span></span>`;
   };
 
   // Колонки для Целевых (по ТЗ 6)

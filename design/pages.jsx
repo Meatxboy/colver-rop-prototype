@@ -28,7 +28,10 @@ function CallDetail({ call, data, onBack, onOpenManager }) {
           <div className="cd-header-meta">
             <div className="cd-title">Звонок {call.id}</div>
             <div className="cd-meta-row">
-              <span>{call.datetime}</span>
+              <span style={{display:'inline-flex', alignItems:'center', gap:4}}>
+                <CallDirectionIcon direction={call.direction} answered={call.answered} size={14}/>
+                <span>{call.datetime}</span>
+              </span>
               <span className="cd-dot">·</span>
               <span>{call.duration}</span>
               <span className="cd-dot">·</span>
@@ -183,7 +186,10 @@ function CallModal({ callId, data, onClose, onCreateTask }) {
             <div className="cd-header-meta">
               <div className="cd-title">Звонок {call.id || callId}</div>
               <div className="cd-meta-row">
-                <span>{call.datetime}</span>
+                <span style={{display:'inline-flex', alignItems:'center', gap:4}}>
+                  <CallDirectionIcon direction={call.direction} answered={call.answered} size={14}/>
+                  <span>{call.datetime}</span>
+                </span>
                 <span className="cd-dot">·</span>
                 <span>{call.duration}</span>
                 <span className="cd-dot">·</span>

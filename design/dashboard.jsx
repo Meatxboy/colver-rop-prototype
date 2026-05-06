@@ -309,7 +309,7 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask }) {
                 </td>
                 <td className="tac"><ScoreCell value={item.score} max={5}/></td>
                 <td className="tar age-cell">
-                  <span style={{display:'inline-flex', alignItems:'center', gap:6, justifyContent:'flex-end'}}>
+                  <span style={{display:'inline-flex', alignItems:'center', gap:4, justifyContent:'flex-end'}}>
                     <CallDirectionIcon direction={item.direction} answered={item.answered}/>
                     <span className={item.ageMin <= 30 ? 'age-fresh' : ''}>{item.age}</span>
                   </span>
