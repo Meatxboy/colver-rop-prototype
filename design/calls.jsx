@@ -15,7 +15,8 @@ function AgGridReactLite({ rowData, columnDefs, onRowClicked, pageSize=20, pageS
       pagination: true,
       paginationPageSize: pageSize,
       paginationPageSizeSelector: pageSizeOptions,
-      defaultColDef: { resizable: true, sortable: true },
+      // sortingOrder includes null → 3rd click clears sort and returns to original order (rule 3).
+      defaultColDef: { resizable: true, sortable: true, sortingOrder: ['asc', 'desc', null], unSortIcon: false },
       onRowClicked: (e) => {
         if (e.event && e.event.target.closest('button')) return;
         onRowClicked && onRowClicked(e);
@@ -86,6 +87,28 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
 
   const textCell = p => `<span style="font-size:12px;color:#52525B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:200px" title="${(p.value||'').replace(/"/g,"'")}">${p.value||'—'}</span>`;
 
+  // Direction icon for AG Grid (rule 5). Outgoing = ↗, incoming = ↙. Red when not answered.
+  // SVG paths mirror the lucide arrow-up-right / arrow-down-left used by Icon.* in ui.jsx.
+  const directionCell = p => {
+    const dir = p.data?.direction === 'in' ? 'in' : 'out';
+    const ok  = p.data?.answered !== false;
+    const label = (dir === 'in' ? 'Входящий ' : 'Исходящий ') + (ok ? 'успешный' : 'неуспешный');
+    const color = ok ? '#71717A' : '#DC2626';
+    const path = dir === 'in'
+      ? '<line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/>'
+      : '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>';
+    return `<span title="${label}" aria-label="${label}" style="display:inline-flex;align-items:center;justify-content:center;color:${color};line-height:0;vertical-align:middle">`
+      + `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`
+      + `</span>`;
+  };
+
+  // Combine direction icon + datetime in a single cell so we don't burn an extra column.
+  const datetimeCell = p => {
+    const icon = directionCell({ data: p.data });
+    const text = p.value || '';
+    return `<span style="display:inline-flex;align-items:center;gap:8px;white-space:nowrap">${icon}<span>${text}</span></span>`;
+  };
+
   // Колонки для Целевых (по ТЗ 6)
   const targetedCols = useMemo(() => [
     { field:'manager',       headerName:'Специалист',      width:160, cellRenderer: managerCell, pinned:'left', lockPinned:true },
@@ -95,7 +118,7 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
     { field:'objectionType', headerName:'Тип возражения',  width:170, cellRenderer: textCell, sortable:false },
     { field:'scriptOk',      headerName:'Скрипт',          width:80,  cellRenderer: boolCell, cellStyle:{textAlign:'center'}, sortable:false },
     { field:'promoOk',       headerName:'Акции',           width:72,  cellRenderer: boolCell, cellStyle:{textAlign:'center'}, sortable:false },
-    { field:'datetime',      headerName:'Время',           width:140 },
+    { field:'datetime',      headerName:'Время',           width:170, cellRenderer: datetimeCell },
     { field:'content',       headerName:'Содержание',      flex:1,    cellRenderer: textCell, sortable:false },
     { field:'recommendation',headerName:'Рекомендации',   width:200, cellRenderer: textCell, sortable:false },
   ], []);
@@ -106,7 +129,7 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
     { field:'status',   headerName:'Результат',    width:130,
       cellRenderer: () => `<span class="badge bg-secondary" style="color:#71717A">Нецелевой</span>`
     },
-    { field:'datetime', headerName:'Время',        width:150 },
+    { field:'datetime', headerName:'Время',        width:180, cellRenderer: datetimeCell },
     { field:'content',  headerName:'Содержание',   flex:1,   cellRenderer: textCell, sortable:false },
   ], []);
 

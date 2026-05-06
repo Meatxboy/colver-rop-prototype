@@ -88,6 +88,10 @@ for(let i=0;i<140;i++){
   const minutesAgo = rrInt(0, 60*24*30);
   const d = new Date(baseDate.getTime() - minutesAgo*60000);
   const score = isTargeted ? (3 + sr()*2).toFixed(1) : (sr()*3+1).toFixed(1);
+  // Направление: 50/50; ответ: ~85% answered (15% пропущенный/без ответа).
+  // Если звонок не отвечен — длительность не учитываем как «успешный».
+  const direction = sr() < 0.5 ? 'in' : 'out';
+  const answered  = sr() < 0.85;
   CALLS.push({
     id: 'C-'+(1850-i),
     dateTime: `${pad2(d.getDate())}.${pad2(d.getMonth()+1)}.${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
@@ -99,6 +103,8 @@ for(let i=0;i<140;i++){
     durationMin: dur,
     result,
     isTargeted,
+    direction,
+    answered,
     nextStep: isTargeted ? rrand(NEXT_STEPS.slice(0,5)) : (Math.random()>0.5 ? 'нет' : '—'),
     score: parseFloat(score),
     objection: rrand(OBJECTIONS),
