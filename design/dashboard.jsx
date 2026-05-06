@@ -345,6 +345,7 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
             <th style={{width:220}} className="sortable" onClick={()=>onSort('manager')}>Менеджер<SortIndicator active={sortKey==='manager'} dir={sortDir}/></th>
             <th style={{width:64}} className="sortable" onClick={()=>onSort('score')}>Балл<SortIndicator active={sortKey==='score'} dir={sortDir}/></th>
             <th style={{width:110}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
+            <th style={{width:36}} aria-label=""></th>
             <th style={{width:42}} aria-label=""></th>
           </tr>
         </thead>
@@ -361,18 +362,7 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
                   <div className="problem-sub">{item.subTitle || `Клиент ${item.client}`}</div>
                 </td>
                 <td>
-                  <span style={{display:'inline-flex', alignItems:'center', gap:6}}>
-                    <span style={{fontWeight:600}}>{item.manager}</span>
-                    {openTask && (
-                      <button
-                        type="button"
-                        className="task-indicator"
-                        title={`Есть открытая задача · ${openTask.id}`}
-                        onClick={(e) => { e.stopPropagation(); onOpenTask && onOpenTask(openTask); }}>
-                        <Icon.taskBadge size={13}/>
-                      </button>
-                    )}
-                  </span>
+                  <span style={{fontWeight:600}}>{item.manager}</span>
                 </td>
                 <td><ScoreCell value={item.score} max={5}/></td>
                 <td className="age-cell">
@@ -380,6 +370,17 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
                     <CallDirectionIcon direction={item.direction} answered={item.answered}/>
                     <span className={item.ageMin <= 30 ? 'age-fresh' : ''}>{formatAge(item.ageMin)}</span>
                   </span>
+                </td>
+                <td>
+                  {openTask && (
+                    <button
+                      type="button"
+                      className="task-indicator"
+                      title={`Есть открытая задача · ${openTask.id}`}
+                      onClick={(e) => { e.stopPropagation(); onOpenTask && onOpenTask(openTask); }}>
+                      <Icon.taskBadge size={13}/>
+                    </button>
+                  )}
                 </td>
                 <td>
                   <button
@@ -394,7 +395,7 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
               </tr>
               {isOpen && (
                 <tr>
-                  <td colSpan={6} style={{padding:0}}>
+                  <td colSpan={7} style={{padding:0}}>
                     <div className="queue-expanded">
                       <div style={{display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:14}}>
                         <div className="recommendation-block">

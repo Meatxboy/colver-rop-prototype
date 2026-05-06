@@ -781,19 +781,19 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 }
 .row-toggle:hover { background: var(--secondary); color: var(--foreground); border-color: var(--border-strong); }
 
-/* "Has open task" indicator. Small button next to manager name in queue rows;
-   chip variant in CallModal header. */
+/* "Has open task" indicator. Small button in its own queue column (after
+   Давность, before the row-toggle); chip variant in CallModal header. */
 .task-indicator {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px;
-  border: 1px solid var(--warning); background: var(--warning-soft);
-  color: var(--warning-strong);
+  width: 24px; height: 24px;
+  border: 1px solid var(--primary); background: var(--primary-soft);
+  color: var(--primary-strong);
   border-radius: 999px;
   cursor: pointer;
   padding: 0;
   transition: background .12s;
 }
-.task-indicator:hover { background: #FDE68A; }
+.task-indicator:hover { background: var(--primary-soft-hover); }
 .task-indicator.is-chip {
   width: auto; height: 28px;
   padding: 0 10px; gap: 5px;
