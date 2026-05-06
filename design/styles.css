@@ -449,29 +449,144 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .select:focus { outline: 0; border-color: var(--ring); box-shadow: 0 0 0 3px rgba(29,78,216,.1); }
 .select-caret { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted-foreground); }
 
-/* ── Period selector ─────────────────────────────────────────────────── */
-.period-selector {
-  display: inline-flex;
-  background: var(--muted);
-  border-radius: var(--radius);
-  padding: 3px;
-  gap: 2px;
+/* ── Period selector (calendar dropdown) ─────────────────────────────── */
+.period-selector { position: relative; display: inline-block; }
+.period-trigger {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 12px;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--foreground); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .12s;
 }
-.period-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 5px 12px;
-  border-radius: 5px;
-  border: 0;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 12.5px;
-  font-weight: 500;
+.period-trigger:hover { background: var(--secondary); border-color: var(--border-strong); }
+.period-trigger > svg:last-child { color: var(--muted-foreground); }
+
+.period-popover {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  width: 320px;
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .12);
+  z-index: 60;
+  overflow: hidden;
+  animation: fadeIn .12s ease;
+}
+
+.period-tabs {
+  display: flex;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+}
+.period-tab-btn {
+  flex: 1;
+  background: transparent; border: 0;
+  padding: 10px 4px;
+  color: var(--muted-foreground); font-size: 12.5px; font-weight: 500;
   cursor: pointer;
-  transition: all .12s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .1s;
 }
-.period-btn:hover { color: var(--foreground); }
-.period-btn.is-active { background: #fff; color: var(--foreground); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
-.period-range { font-size: 11px; color: var(--muted-foreground); margin-left: 4px; padding-left: 6px; border-left: 1px solid var(--border); }
+.period-tab-btn:hover { color: var(--foreground); }
+.period-tab-btn.is-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.period-subtabs {
+  display: flex; gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.period-subtab-btn {
+  background: transparent; border: 0;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px; color: var(--muted-foreground); font-weight: 500;
+  cursor: pointer;
+  transition: background .1s, color .1s;
+}
+.period-subtab-btn:hover { background: var(--secondary); color: var(--foreground); }
+.period-subtab-btn.is-active { background: var(--primary-soft); color: var(--primary-strong); font-weight: 600; }
+
+.period-popover-body {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* Calendar */
+.period-calendar { padding: 4px 12px 8px; }
+.period-calendar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13.5px; font-weight: 600; color: var(--foreground);
+}
+.period-year-nav {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--muted); border-radius: 999px; padding: 2px 4px;
+  font-size: 12.5px; font-weight: 600;
+}
+.period-year-nav span:not(:first-child):not(:last-child),
+.period-year-nav > span { padding: 0 4px; }
+.period-year-nav button {
+  background: transparent; border: 0; cursor: pointer;
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted-foreground);
+  border-radius: 999px;
+}
+.period-year-nav button:hover { color: var(--foreground); background: rgba(0,0,0,.04); }
+
+.period-calendar-month-label {
+  padding: 8px 0 4px;
+  font-size: 13.5px; font-weight: 600; color: var(--foreground);
+}
+.period-month {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+  padding-bottom: 4px;
+}
+.period-day {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+.period-day.is-out { color: transparent; }
+.period-day.is-weekend { color: var(--danger); }
+.period-day.is-sel { background: var(--primary-soft); color: var(--primary-strong); font-weight: 600; }
+.period-day.is-sel.is-weekend { color: var(--primary-strong); }
+
+/* Month / Quarter / Year lists */
+.period-list { padding: 6px 12px 8px; }
+.period-list-year { padding: 6px 0; }
+.period-list-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.period-year-label { font-size: 13px; font-weight: 500; color: var(--muted-foreground); margin-bottom: 6px; }
+.period-year-label-inline { font-size: 13px; font-weight: 500; color: var(--muted-foreground); width: 44px; flex-shrink: 0; }
+.period-month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.period-quarter-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; flex: 1; }
+.period-cell {
+  background: transparent; border: 0; cursor: pointer;
+  padding: 7px 8px; border-radius: var(--radius-sm);
+  font-size: 12.5px; color: var(--foreground); font-weight: 500;
+  text-align: center;
+  transition: background .1s, color .1s;
+}
+.period-cell:hover { background: var(--secondary); }
+.period-cell.is-active { background: var(--primary-soft); color: var(--primary-strong); font-weight: 600; }
+
+.period-year-btn {
+  display: block; width: 100%;
+  background: transparent; border: 0; cursor: pointer;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  font-size: 13px; text-align: left; color: var(--foreground); font-weight: 500;
+  transition: background .1s, color .1s;
+}
+.period-year-btn:hover { background: var(--secondary); }
+.period-year-btn.is-active { background: var(--primary-soft); color: var(--primary-strong); font-weight: 600; }
 
 /* ── Pagination ──────────────────────────────────────────────────────── */
 .pagination { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 1px solid var(--border); background: #fff; gap: 12px; flex-wrap: wrap; }
@@ -540,9 +655,11 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 
 /* ── Dashboard layout ────────────────────────────────────────────────── */
 .dashboard-hero { display: block; }
-.dashboard-row-1 { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
-.dashboard-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.dashboard-row-1 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 16px; }
+.dashboard-row-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+/* KPI cards auto-fit by container width (not viewport): 4 → 3 → 2 → 1 cols
+   as the available space shrinks. Triggers on AI-panel open without media-q. */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 
 .kpi-card { padding: 16px 18px; }
 .kpi-label { font-size: 12px; color: var(--muted-foreground); font-weight: 500; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -894,8 +1011,8 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
   .kpi-value { font-size: 24px; }
 }
 @media (max-width: 1280px) {
-  .dashboard-row-2 { grid-template-columns: 1fr; }
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  /* .dashboard-row-2 and .kpi-grid now auto-wrap by container via auto-fit;
+     no viewport media-query needed for them. */
   .queue-row .problem-cell { max-width: 280px; }
   .queue-row .problem-content { max-width: 280px; }
 }
