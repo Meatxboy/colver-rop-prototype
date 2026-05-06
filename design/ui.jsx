@@ -21,6 +21,9 @@ const Icon = {
   chevUp: (p={}) => <svg width={p.size||14} height={p.size||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>,
   arrowUp: (p={}) => <svg width={p.size||12} height={p.size||12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>,
   arrowDown: (p={}) => <svg width={p.size||12} height={p.size||12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>,
+  // Direction icons (rule 5): outgoing = up-right diagonal, incoming = down-left diagonal.
+  arrowUpRight: (p={}) => <svg width={p.size||14} height={p.size||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>,
+  arrowDownLeft: (p={}) => <svg width={p.size||14} height={p.size||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></svg>,
   check: (p={}) => <svg width={p.size||14} height={p.size||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   x: (p={}) => <svg width={p.size||14} height={p.size||14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   play: (p={}) => <svg width={p.size||12} height={p.size||12} viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>,
@@ -249,9 +252,67 @@ const Modal = ({ open, onClose, title, children, footer, size='md' }) => {
   </div>;
 };
 
+// ── Tri-state column sort (rule 3) ─────────────────────────────────────────
+// Cycle on the same key: (current dir) → asc → desc → none → asc …
+// none = sortKey/sortDir both null → caller renders items in original order.
+function useTriStateSort(initialKey = null, initialDir = null) {
+  const [sortKey, setSortKey] = useState(initialKey);
+  const [sortDir, setSortDir] = useState(initialDir);
+  const sortBy = (k) => {
+    if (sortKey !== k) { setSortKey(k); setSortDir('asc'); return; }
+    if (sortDir === 'asc')  { setSortDir('desc'); return; }
+    if (sortDir === 'desc') { setSortKey(null); setSortDir(null); return; }
+    setSortDir('asc');
+  };
+  return { sortKey, sortDir, sortBy };
+}
+
+// Sort indicator: arrow when active, nothing when inactive (rule 3 — "no arrow" for unsorted).
+const SortIndicator = ({ active, dir }) => {
+  if (!active || !dir) return null;
+  return <span className="sort-ind is-active">
+    {dir === 'asc' ? <Icon.arrowUp size={9}/> : <Icon.arrowDown size={9}/>}
+  </span>;
+};
+
+// Apply tri-state sort to an array; returns the same reference when no sort is active.
+const applyTriStateSort = (items, sortKey, sortDir) => {
+  if (!sortKey || !sortDir) return items;
+  const sign = sortDir === 'asc' ? 1 : -1;
+  return [...items].sort((a, b) => {
+    const va = a[sortKey], vb = b[sortKey];
+    // Strings compare with localeCompare so Cyrillic sorts correctly.
+    if (typeof va === 'string' || typeof vb === 'string') {
+      return String(va ?? '').localeCompare(String(vb ?? ''), 'ru') * sign;
+    }
+    const na = va ?? -Infinity, nb = vb ?? -Infinity;
+    return (na < nb ? -1 : na > nb ? 1 : 0) * sign;
+  });
+};
+
+// ── Call direction icon (rule 5) ───────────────────────────────────────────
+// direction: 'in' | 'out'. answered: boolean. Renders a small diagonal arrow
+// with a native tooltip; non-answered calls render in the danger color.
+const CallDirectionIcon = ({ direction, answered, size = 13 }) => {
+  const dir = direction === 'in' ? 'in' : 'out';
+  const success = answered !== false;
+  const label = (dir === 'in' ? 'Входящий ' : 'Исходящий ') + (success ? 'успешный' : 'неуспешный');
+  const color = success ? 'var(--muted-foreground)' : 'var(--danger)';
+  const Glyph = dir === 'in' ? Icon.arrowDownLeft : Icon.arrowUpRight;
+  return (
+    <span title={label} aria-label={label} style={{
+      display:'inline-flex', alignItems:'center', justifyContent:'center',
+      color, lineHeight:0, verticalAlign:'middle'
+    }}>
+      <Glyph size={size}/>
+    </span>
+  );
+};
+
 // Export to global
 Object.assign(window, {
   cn, Icon, Button, Badge, PriorityBadge, Card, CardHeader, CardTitle, CardContent,
   Tabs, Avatar, Progress, ScoreCell, PercentCell, Delta, Sparkline, Tooltip,
   Switch, Select, PeriodSelector, Pagination, EmptyState, Modal,
+  useTriStateSort, SortIndicator, applyTriStateSort, CallDirectionIcon,
 });

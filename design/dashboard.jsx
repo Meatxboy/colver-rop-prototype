@@ -262,9 +262,17 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask }) {
   const [expanded, setExpanded] = useState(items[0]?.id ?? null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
-  const pagedItems = items.slice(page * pageSize, (page + 1) * pageSize);
 
+  // Tri-state sort by Приоритет / Менеджер / Балл / Давность (rule 3).
+  const { sortKey, sortDir, sortBy } = useTriStateSort();
+  const sortedItems = useMemo(
+    () => applyTriStateSort(items, sortKey, sortDir),
+    [items, sortKey, sortDir]
+  );
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / pageSize));
+  const pagedItems = sortedItems.slice(page * pageSize, (page + 1) * pageSize);
+
+  const onSort = (k) => { sortBy(k); setPage(0); setExpanded(null); };
   const handleSetPageSize = (s) => { setPageSize(s); setPage(0); setExpanded(null); };
 
   if (items.length === 0) {
@@ -279,11 +287,11 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask }) {
       <table className="data-table">
         <thead>
           <tr>
-            <th style={{width:60}}>Приор.</th>
+            <th style={{width:60}} className="sortable" onClick={()=>onSort('priority')}>Приор.<SortIndicator active={sortKey==='priority'} dir={sortDir}/></th>
             <th>Звонок · проблема</th>
-            <th style={{width:130}}>Менеджер</th>
-            <th style={{width:80,textAlign:'center'}}>Балл</th>
-            <th style={{width:90,textAlign:'right'}}>Давность</th>
+            <th style={{width:130}} className="sortable" onClick={()=>onSort('manager')}>Менеджер<SortIndicator active={sortKey==='manager'} dir={sortDir}/></th>
+            <th style={{width:80,textAlign:'center'}} className="sortable" onClick={()=>onSort('score')}>Балл<SortIndicator active={sortKey==='score'} dir={sortDir}/></th>
+            <th style={{width:110,textAlign:'right'}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
             <th style={{width:200,textAlign:'right'}}>Действия</th>
           </tr>
         </thead>
@@ -300,7 +308,12 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask }) {
                   <span style={{fontWeight:600}}>{item.manager}</span>
                 </td>
                 <td className="tac"><ScoreCell value={item.score} max={5}/></td>
-                <td className="tar age-cell"><span className={item.ageMin <= 30 ? 'age-fresh' : ''}>{item.age}</span></td>
+                <td className="tar age-cell">
+                  <span style={{display:'inline-flex', alignItems:'center', gap:4, justifyContent:'flex-end', whiteSpace:'nowrap'}}>
+                    <CallDirectionIcon direction={item.direction} answered={item.answered}/>
+                    <span className={item.ageMin <= 30 ? 'age-fresh' : ''}>{item.age}</span>
+                  </span>
+                </td>
                 <td className="tar">
                   <div className="actions-cell">
                     <Button size="md" variant="outline" onClick={(e)=>{e.stopPropagation(); setExpanded(expanded===item.id?null:item.id);}}>
@@ -347,8 +360,17 @@ function ManagementQueue({ items, onProcess }) {
   const [expanded, setExpanded] = useState(items[0]?.id ?? null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
-  const pagedItems = items.slice(page * pageSize, (page + 1) * pageSize);
+
+  // Tri-state sort by Приоритет / Менеджер (employee) / Давность (rule 3).
+  const { sortKey, sortDir, sortBy } = useTriStateSort();
+  const sortedItems = useMemo(
+    () => applyTriStateSort(items, sortKey, sortDir),
+    [items, sortKey, sortDir]
+  );
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / pageSize));
+  const pagedItems = sortedItems.slice(page * pageSize, (page + 1) * pageSize);
+
+  const onSort = (k) => { sortBy(k); setPage(0); setExpanded(null); };
 
   if (!items.length) return <EmptyState icon={<Icon.check size={26}/>} title="Нет открытых решений" desc="Системные сбои и нестандартные кейсы появятся здесь."/>;
   return (
@@ -356,10 +378,10 @@ function ManagementQueue({ items, onProcess }) {
       <table className="data-table">
         <thead>
           <tr>
-            <th style={{width:60}}>Приор.</th>
+            <th style={{width:60}} className="sortable" onClick={()=>onSort('priority')}>Приор.<SortIndicator active={sortKey==='priority'} dir={sortDir}/></th>
             <th>Тип · описание</th>
-            <th style={{width:160}}>Затронутые</th>
-            <th style={{width:90,textAlign:'right'}}>Давность</th>
+            <th style={{width:160}} className="sortable" onClick={()=>onSort('employee')}>Затронутые<SortIndicator active={sortKey==='employee'} dir={sortDir}/></th>
+            <th style={{width:90,textAlign:'right'}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
             <th style={{width:120,textAlign:'right'}}>Действия</th>
           </tr>
         </thead>
@@ -689,25 +711,17 @@ const RedCell = ({ value, isRed, suffix='' }) => (
 );
 
 function ManagersTable({ rows, onOpen }) {
-  const [sortKey, setSortKey] = useState('score');
-  const [sortDir, setSortDir] = useState('desc');
+  // Tri-state sort (rule 3). Initial: score desc — preserves prior default.
+  const { sortKey, sortDir, sortBy } = useTriStateSort('score', 'desc');
   const [page, setPage]       = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  const sorted = [...rows].sort((a,b) => {
-    const va = a[sortKey] ?? -Infinity, vb = b[sortKey] ?? -Infinity;
-    return (va < vb ? -1 : va > vb ? 1 : 0) * (sortDir === 'asc' ? 1 : -1);
-  });
+  const sorted = useMemo(() => applyTriStateSort(rows, sortKey, sortDir), [rows, sortKey, sortDir]);
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const paged = sorted.slice(page * pageSize, (page + 1) * pageSize);
 
-  const sortBy = (k) => {
-    if (sortKey === k) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(k); setSortDir('desc'); setPage(0); }
-  };
-  const SI = ({ k }) => sortKey === k
-    ? <span className="sort-ind is-active">{sortDir === 'asc' ? <Icon.arrowUp size={9}/> : <Icon.arrowDown size={9}/>}</span>
-    : null;
+  const onSort = (k) => { sortBy(k); setPage(0); };
+  const SI = ({ k }) => <SortIndicator active={sortKey===k} dir={sortDir}/>;
 
   // ТЗ 4.7 red-highlight rules
   const isConvRed    = m => (m.conversion ?? 101) <= 50;
@@ -723,17 +737,17 @@ function ManagersTable({ rows, onOpen }) {
           <thead>
             <tr>
               {/* Sticky first column */}
-              <th onClick={()=>sortBy('name')} className="sortable"
+              <th onClick={()=>onSort('name')} className="sortable"
                 style={{position:'sticky', left:0, background:'var(--card)', zIndex:2, minWidth:160, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
                 Специалист<SI k="name"/>
               </th>
-              <th onClick={()=>sortBy('calls')} className="sortable tar" style={{minWidth:80}}>Звонков<SI k="calls"/></th>
-              <th onClick={()=>sortBy('success')} className="sortable tar" style={{minWidth:80}}>Успешные<SI k="success"/></th>
-              <th onClick={()=>sortBy('conversion')} className="sortable tar" style={{minWidth:90}}>CR<SI k="conversion"/></th>
-              <th onClick={()=>sortBy('score')} className="sortable tac" style={{minWidth:100}}>Ср. оценка<SI k="score"/></th>
-              <th onClick={()=>sortBy('objIdent')} className="sortable tar" style={{minWidth:110}}>Возр. выявлено<SI k="objIdent"/></th>
-              <th onClick={()=>sortBy('objHandled')} className="sortable tar" style={{minWidth:120}}>Возр. отработано<SI k="objHandled"/></th>
-              <th onClick={()=>sortBy('scriptCompliance')} className="sortable tar" style={{minWidth:80}}>Скрипт<SI k="scriptCompliance"/></th>
+              <th onClick={()=>onSort('calls')} className="sortable tar" style={{minWidth:80}}>Звонков<SI k="calls"/></th>
+              <th onClick={()=>onSort('success')} className="sortable tar" style={{minWidth:80}}>Успешные<SI k="success"/></th>
+              <th onClick={()=>onSort('conversion')} className="sortable tar" style={{minWidth:90}}>CR<SI k="conversion"/></th>
+              <th onClick={()=>onSort('score')} className="sortable tac" style={{minWidth:100}}>Ср. оценка<SI k="score"/></th>
+              <th onClick={()=>onSort('objIdent')} className="sortable tar" style={{minWidth:110}}>Возр. выявлено<SI k="objIdent"/></th>
+              <th onClick={()=>onSort('objHandled')} className="sortable tar" style={{minWidth:120}}>Возр. отработано<SI k="objHandled"/></th>
+              <th onClick={()=>onSort('scriptCompliance')} className="sortable tar" style={{minWidth:80}}>Скрипт<SI k="scriptCompliance"/></th>
             </tr>
           </thead>
           <tbody>
