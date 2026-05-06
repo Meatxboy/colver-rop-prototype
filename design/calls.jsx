@@ -64,7 +64,7 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
     const lastName = parts[0] || '';
     const initials = parts.slice(1).map(w => w[0] ? w[0].toUpperCase() + '.' : '').join('');
     const display = initials ? `${lastName} ${initials}` : lastName;
-    return `<span style="font-size:13px;font-weight:500;white-space:nowrap">${display}</span>`;
+    return `<span style="font-weight:500;white-space:nowrap">${display}</span>`;
   };
 
   const statusCell = p => {

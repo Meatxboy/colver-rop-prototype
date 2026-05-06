@@ -56,6 +56,10 @@
   /* Density */
   --row-h: 44px;
   --row-padding-y: 10px;
+
+  /* Table typography (single source of truth — keep ≥12px) */
+  --table-font-size: 13px;
+  --table-header-font-size: 11px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -562,7 +566,7 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table thead { background: #F4F4F5; position: sticky; top: 0; z-index: 5; }
 .data-table th {
-  font-size: 11px; font-weight: 700;
+  font-size: var(--table-header-font-size); font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #52525B;
@@ -579,7 +583,7 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .data-table th.tar { text-align: right; }
 .data-table th.tac { text-align: center; }
 .data-table td {
-  font-size: 13.5px;
+  font-size: var(--table-font-size);
   padding: 13px 14px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
@@ -594,8 +598,8 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 
 /* ── Attention queue ─────────────────────────────────────────────────── */
 .queue-row .problem-cell { max-width: 360px; }
-.queue-row .problem-title { font-weight: 600; color: var(--foreground); margin-bottom: 3px; font-size: 13.5px; }
-.queue-row .problem-sub { font-size: 12.5px; color: var(--muted-foreground); line-height: 1.5; }
+.queue-row .problem-title { font-weight: 600; color: var(--foreground); margin-bottom: 3px; font-size: var(--table-font-size); }
+.queue-row .problem-sub { font-size: 12px; color: var(--muted-foreground); line-height: 1.5; }
 .queue-row .problem-content { font-size: 12px; color: #52525B; margin-top: 4px; line-height: 1.45; max-width: 380px; }
 .queue-row .age-cell { color: var(--muted-foreground); font-size: 12px; }
 .queue-row .age-fresh { color: var(--danger-strong); font-weight: 600; }
@@ -628,8 +632,8 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .rating-row:last-child { border-bottom: 0; }
 .rating-rank { font-size: 12px; font-weight: 700; color: var(--muted-foreground); width: 18px; text-align: right; font-variant-numeric: tabular-nums; }
 .rating-rank.is-top { color: var(--primary); }
-.rating-name { flex: 1; font-size: 12.5px; font-weight: 500; color: var(--foreground); }
-.rating-value { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rating-name { flex: 1; font-size: var(--table-font-size); font-weight: 500; color: var(--foreground); }
+.rating-value { font-size: var(--table-font-size); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ── Loss reasons ────────────────────────────────────────────────────── */
 .reason-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
@@ -642,7 +646,7 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 /* ── AG Grid theming overrides ───────────────────────────────────────── */
 .ag-theme-quartz {
   --ag-font-family: 'Inter', sans-serif;
-  --ag-font-size: 13px;
+  --ag-font-size: var(--table-font-size);
   --ag-foreground-color: var(--foreground);
   --ag-background-color: #fff;
   --ag-border-color: var(--border);
@@ -665,7 +669,7 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
   --ag-checkbox-checked-color: var(--primary);
   --ag-input-focus-box-shadow: 0 0 0 3px rgba(29,78,216,.1);
 }
-.ag-theme-quartz .ag-header-cell-text { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+.ag-theme-quartz .ag-header-cell-text { font-weight: 600; font-size: var(--table-header-font-size); text-transform: uppercase; letter-spacing: 0.04em; }
 .ag-theme-quartz .ag-paging-panel { border-top: 1px solid var(--border); }
 
 /* AG-grid master/detail panel */
@@ -834,3 +838,44 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .font-mono { font-family: 'SF Mono', Menlo, monospace; }
 .fade-in { animation: fadeIn .15s ease; }
 .slide-up { animation: slideUp .15s ease; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────
+   - ≤1440px: tighten paddings/gaps so tables don't horizontally clip
+   - ≤1280px: collapse 2-col dashboard row to 1 col
+   - ≤1230px: viewport too narrow to keep AI panel inline (would push
+              main content < 800px), so AI panel switches to a fixed
+              right-side overlay with backdrop. Trigger: 50 (sidebar) +
+              380 (ai-panel) + 800 (min main) = 1230px.                */
+@media (max-width: 1440px) {
+  .content { padding: 18px; gap: 14px; }
+  .data-table th, .data-table td { padding-left: 10px; padding-right: 10px; }
+  .ag-theme-quartz { --ag-cell-horizontal-padding: 9px; }
+  .kpi-card { padding: 14px 14px; }
+  .kpi-value { font-size: 24px; }
+}
+@media (max-width: 1280px) {
+  .dashboard-row-2 { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .queue-row .problem-cell { max-width: 280px; }
+  .queue-row .problem-content { max-width: 280px; }
+}
+.ai-panel-backdrop { display: none; }
+@media (max-width: 1230px) {
+  .ai-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 50;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, .12);
+  }
+  .ai-panel-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .28);
+    z-index: 49;
+    animation: fadeIn .15s ease;
+  }
+}
