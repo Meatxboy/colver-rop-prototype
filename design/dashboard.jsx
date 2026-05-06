@@ -47,65 +47,66 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
         {queueTab === 'practices' && <PracticesQueue items={queuePractices}/>}
       </Card>
 
-      {/* Period selector + KPIs */}
-      <div className="row-between" style={{marginTop:4}}>
-        <div className="section-h" style={{margin:0}}>Аналитика за период</div>
-        <PeriodSelector value={period} onChange={setPeriod}/>
-      </div>
+      {/* Frame 2 — Аналитика за период.
+          Wrapper Card has the sticky header at the top so the period filter
+          stays accessible while scrolling through KPIs/ratings/objections. */}
+      <Card className="analytics-frame">
+        <div className="analytics-header">
+          <div className="section-h-title">Аналитика за период</div>
+          <PeriodSelector value={period} onChange={setPeriod}/>
+        </div>
+        <div className="analytics-body">
 
-      <div className="kpi-grid">
-        <Card className="kpi-card">
-          <div className="kpi-label">Средняя оценка звонка <Tooltip text="Среднее от всех составляющих оценки звонка по критериям AI"/></div>
-          <div className="kpi-value-row">
-            <div className={cn('kpi-value', kpis.avgScore >= 4 ? 'is-good' : kpis.avgScore >= 3 ? 'is-warn' : 'is-bad')}>{kpis.avgScore.toFixed(1)}</div>
-            <span className="kpi-unit">/ 5</span>
+          <div className="kpi-grid">
+            <Card className="kpi-card">
+              <div className="kpi-label">Средняя оценка звонка <Tooltip text="Среднее от всех составляющих оценки звонка по критериям AI"/></div>
+              <div className="kpi-value-row">
+                <div className={cn('kpi-value', kpis.avgScore >= 4 ? 'is-good' : kpis.avgScore >= 3 ? 'is-warn' : 'is-bad')}>{kpis.avgScore.toFixed(1)}</div>
+                <span className="kpi-unit">/ 5</span>
+              </div>
+              <div className="kpi-meta">
+                <Delta value={kpis.scoreDelta} suffix=""/>
+                <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
+              </div>
+            </Card>
+            <Card className="kpi-card is-danger">
+              <div className="kpi-label">Звонки без целевого действия <Tooltip text="Количество звонков, в которых не зафиксировано целевое действие"/></div>
+              <div className="kpi-value-row"><div className="kpi-value">{kpis.noTarget}</div><span className="kpi-unit">звонков</span></div>
+              <div className="kpi-meta">
+                <Delta value={kpis.noTargetDelta} invertColor suffix="%"/>
+                <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
+              </div>
+            </Card>
+            <Card className="kpi-card is-primary">
+              <div className="kpi-label">Конверсия в целевое действие <Tooltip text="Доля звонков с зафиксированным целевым действием"/></div>
+              <div className="kpi-value-row"><div className="kpi-value">{kpis.conversion}%</div></div>
+              <div className="kpi-meta">
+                <Delta value={kpis.convDelta} suffix=" пп"/>
+                <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
+              </div>
+            </Card>
+            <Card className="kpi-card">
+              <div className="kpi-label">Звонки без договорённостей <Tooltip text="Звонки, завершённые без фиксации следующего шага или договорённости"/></div>
+              <div className="kpi-value-row"><div className="kpi-value">{kpis.noAgreement}</div><span className="kpi-unit">звонков</span></div>
+              <div className="kpi-meta">
+                <Delta value={kpis.noAgreementDelta} invertColor suffix="%"/>
+                <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
+              </div>
+            </Card>
           </div>
-          <div className="kpi-meta">
-            <Delta value={kpis.scoreDelta} suffix=""/>
-            <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
-          </div>
-        </Card>
-        <Card className="kpi-card is-danger">
-          <div className="kpi-label">Звонки без целевого действия <Tooltip text="Количество звонков, в которых не зафиксировано целевое действие"/></div>
-          <div className="kpi-value-row"><div className="kpi-value">{kpis.noTarget}</div><span className="kpi-unit">звонков</span></div>
-          <div className="kpi-meta">
-            <Delta value={kpis.noTargetDelta} invertColor suffix="%"/>
-            <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
-          </div>
-        </Card>
-        <Card className="kpi-card is-primary">
-          <div className="kpi-label">Конверсия в целевое действие <Tooltip text="Доля звонков с зафиксированным целевым действием"/></div>
-          <div className="kpi-value-row"><div className="kpi-value">{kpis.conversion}%</div></div>
-          <div className="kpi-meta">
-            <Delta value={kpis.convDelta} suffix=" пп"/>
-            <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
-          </div>
-        </Card>
-        <Card className="kpi-card">
-          <div className="kpi-label">Звонки без договорённостей <Tooltip text="Звонки, завершённые без фиксации следующего шага или договорённости"/></div>
-          <div className="kpi-value-row"><div className="kpi-value">{kpis.noAgreement}</div><span className="kpi-unit">звонков</span></div>
-          <div className="kpi-meta">
-            <Delta value={kpis.noAgreementDelta} invertColor suffix="%"/>
-            <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
-          </div>
-        </Card>
-      </div>
 
-      {/* Рейтинг сотрудников (4.5 ТЗ) */}
-      <RatingTable ratings={ratings} onOpen={onOpenManager}/>
+          {/* Рейтинг сотрудников (4.5 ТЗ) */}
+          <RatingTable ratings={ratings} onOpen={onOpenManager}/>
 
-      {/* Аналитика по группе (4.7 ТЗ) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Аналитика по группе</CardTitle>
-        </CardHeader>
-        <ManagersTable rows={managers} onOpen={setManagerModalId}/>
-      </Card>
+          {/* Аналитика по группе (4.7 ТЗ) */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Аналитика по группе</CardTitle>
+            </CardHeader>
+            <ManagersTable rows={managers} onOpen={setManagerModalId}/>
+          </Card>
 
-      {/* Manager modal */}
-      {managerModalData && <ManagerModal manager={managerModalData} queueItems={queue} onClose={() => setManagerModalId(null)} onCreateTask={onCreateTask}/>}
-
-      {/* Возражения + Причины отказа — два фрейма рядом */}
+          {/* Возражения + Причины отказа — два фрейма рядом */}
       <div style={{display:'flex', gap:16}}>
         {/* Неотработанные возражения */}
         <Card style={{flex:'1 1 0', minWidth:0}}>
@@ -189,6 +190,11 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           </CardContent>
         </Card>
       </div>
+        </div>
+      </Card>
+
+      {/* Manager modal — outside the analytics frame so it overlays normally. */}
+      {managerModalData && <ManagerModal manager={managerModalData} queueItems={queue} onClose={() => setManagerModalId(null)} onCreateTask={onCreateTask}/>}
 
       {/* Footer (по ТЗ) */}
       <footer className="dashboard-footer">

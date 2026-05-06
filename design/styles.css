@@ -54,22 +54,22 @@
   --header-h: 56px;
 
   /* Density */
-  --row-h: 52px;
-  --row-padding-y: 14px;
+  --row-h: 64px;
+  --row-padding-y: 18px;
 
   /* Table typography (single source of truth)
-     Primary 16px / secondary 13px / header 12px per spec.
-     Compact density (Tweaks) drops these to 13/12/11 in app.jsx. */
-  --table-font-size: 16px;
-  --table-secondary-font-size: 13px;
-  --table-header-font-size: 12px;
+     Primary 20px / secondary 16px / header 14px per desktop-readability spec.
+     Compact density (Tweaks) drops these to 16/13/12 in app.jsx. */
+  --table-font-size: 20px;
+  --table-secondary-font-size: 16px;
+  --table-header-font-size: 14px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; }
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   background: #FAFAFA;
   color: var(--foreground);
@@ -224,8 +224,8 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
   z-index: 15;
 }
 .topbar-left { display: flex; align-items: center; gap: 14px; }
-.page-title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
-.crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted-foreground); }
+.page-title { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+.crumbs { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted-foreground); }
 .crumb-sep { color: var(--border-strong); }
 
 .topbar-right { display: flex; align-items: center; gap: 8px; }
@@ -343,7 +343,7 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .card-content, .card-header { overflow: visible; }
 .card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.card-title { font-size: 14px; font-weight: 600; letter-spacing: -0.1px; display: flex; align-items: center; gap: 8px; }
+.card-title { font-size: 17px; font-weight: 600; letter-spacing: -0.1px; display: flex; align-items: center; gap: 8px; }
 .card-content { padding: 16px 18px; }
 
 /* ── Tabs ────────────────────────────────────────────────────────────── */
@@ -634,8 +634,8 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
   gap: 8px;
 }
 .empty-icon { width: 50px; height: 50px; border-radius: 50%; background: var(--secondary); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
-.empty-title { font-size: 14px; font-weight: 600; color: var(--foreground); }
-.empty-desc { font-size: 12.5px; color: var(--muted-foreground); max-width: 360px; line-height: 1.55; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--foreground); }
+.empty-desc { font-size: 14px; color: var(--muted-foreground); max-width: 360px; line-height: 1.55; }
 
 /* ── Modal ───────────────────────────────────────────────────────────── */
 .modal-overlay {
@@ -673,16 +673,43 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .dashboard-hero { display: block; }
 .dashboard-row-1 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 16px; }
 .dashboard-row-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+
+/* Analytics frame — sticky header pinned below the topbar so the period
+   filter stays accessible while scrolling through KPIs/ratings/etc. */
+.analytics-frame {
+  /* overflow MUST be visible so position: sticky works on the inner header */
+  overflow: visible;
+}
+.analytics-header {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 14; /* below topbar (15) and AI panel (10 in inline mode), above content */
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.analytics-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 /* KPI cards auto-fit by container width (not viewport): 4 → 3 → 2 → 1 cols
    as the available space shrinks. Triggers on AI-panel open without media-q. */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 
-.kpi-card { padding: 16px 18px; }
-.kpi-label { font-size: 12px; color: var(--muted-foreground); font-weight: 500; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.kpi-value-row { display: flex; align-items: baseline; gap: 5px; margin-top: 8px; }
-.kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
-.kpi-unit { font-size: 12px; color: var(--muted-foreground); }
-.kpi-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; white-space: nowrap; }
+.kpi-card { padding: 18px 20px; }
+.kpi-label { font-size: 14px; color: var(--muted-foreground); font-weight: 500; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.kpi-value-row { display: flex; align-items: baseline; gap: 5px; margin-top: 10px; }
+.kpi-value { font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+.kpi-unit { font-size: 14px; color: var(--muted-foreground); }
+.kpi-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; white-space: nowrap; }
 .kpi-spark { color: var(--muted-foreground); }
 .kpi-card.is-danger .kpi-value { color: var(--danger); }
 .kpi-card.is-warning .kpi-value { color: var(--warning); }
@@ -690,7 +717,7 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .kpi-card.is-primary .kpi-value { color: var(--primary); }
 
 /* ── Section header ──────────────────────────────────────────────────── */
-.section-h-title { font-size: 14px; font-weight: 700; letter-spacing: -0.1px; }
+.section-h-title { font-size: 18px; font-weight: 700; letter-spacing: -0.1px; }
 .section-h-sub { font-size: 12px; color: var(--muted-foreground); }
 .section-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground); }
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulseDot 1.6s ease-in-out infinite; }
@@ -770,11 +797,11 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 
 /* ── Loss reasons ────────────────────────────────────────────────────── */
 .reason-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
-.reason-name { flex: 1; font-size: 12.5px; color: var(--foreground); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reason-name { flex: 1; font-size: 14px; color: var(--foreground); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reason-bar-track { flex: 1.4; height: 6px; background: var(--secondary); border-radius: 3px; overflow: hidden; max-width: 200px; }
 .reason-bar-fill { height: 100%; background: var(--danger); border-radius: 3px; }
-.reason-count { font-size: 12px; color: var(--muted-foreground); width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
-.reason-pct { font-size: 12px; font-weight: 700; color: var(--foreground); width: 50px; text-align: right; font-variant-numeric: tabular-nums; }
+.reason-count { font-size: 13px; color: var(--muted-foreground); width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+.reason-pct { font-size: 13px; font-weight: 700; color: var(--foreground); width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ── AG Grid theming overrides ───────────────────────────────────────── */
 .ag-theme-quartz {
@@ -790,11 +817,11 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
   --ag-row-hover-color: #FAFAFA;
   --ag-selected-row-background-color: #EFF4FF;
   --ag-odd-row-background-color: #fff;
-  --ag-cell-horizontal-padding: 12px;
+  --ag-cell-horizontal-padding: 14px;
   --ag-grid-size: 5px;
-  --ag-list-item-height: 32px;
-  --ag-row-height: 52px;
-  --ag-header-height: 40px;
+  --ag-list-item-height: 36px;
+  --ag-row-height: 64px;
+  --ag-header-height: 48px;
   --ag-cell-widget-spacing: 6px;
   --ag-active-color: var(--primary);
   --ag-input-focus-border-color: var(--primary);
@@ -937,11 +964,11 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .ai-header-info { display: flex; align-items: center; gap: 10px; }
 .ai-logo { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #1E40AF, #7C3AED); display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 2px 6px rgba(124,58,237,.25); }
 .ai-title-stack { display: flex; flex-direction: column; }
-.ai-title { font-size: 13.5px; font-weight: 700; }
+.ai-title { font-size: 15px; font-weight: 700; }
 .ai-subtitle { font-size: 12px; color: var(--muted-foreground); }
 .ai-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.ai-msg-user { background: var(--primary-soft); color: var(--primary-strong); border-radius: 12px 12px 2px 12px; padding: 9px 13px; align-self: flex-end; max-width: 86%; font-size: 12.5px; line-height: 1.55; font-weight: 500; animation: slideUp .15s ease; }
-.ai-msg-assistant { background: var(--secondary); border-radius: 2px 12px 12px 12px; padding: 11px 14px; align-self: flex-start; max-width: 92%; font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; animation: slideUp .15s ease; }
+.ai-msg-user { background: var(--primary-soft); color: var(--primary-strong); border-radius: 12px 12px 2px 12px; padding: 9px 13px; align-self: flex-end; max-width: 86%; font-size: 14px; line-height: 1.55; font-weight: 500; animation: slideUp .15s ease; }
+.ai-msg-assistant { background: var(--secondary); border-radius: 2px 12px 12px 12px; padding: 11px 14px; align-self: flex-start; max-width: 92%; font-size: 14px; line-height: 1.65; white-space: pre-wrap; animation: slideUp .15s ease; }
 .ai-msg-actions { display: flex; gap: 4px; margin-top: 4px; }
 .ai-action-btn { padding: 3px 7px; border-radius: 5px; border: 1px solid var(--border); background: #fff; font-size: 12px; color: var(--muted-foreground); display: inline-flex; align-items: center; gap: 3px; cursor: pointer; }
 .ai-action-btn:hover { background: var(--secondary); color: var(--foreground); }

@@ -54,10 +54,10 @@ function App() {
     setAiOpen(tweaks.aiOpen);
     setPeriod(tweaks.period);
     document.body.style.background = tweaks.bgTone === 'white' ? '#fff' : tweaks.bgTone === 'cool' ? '#F5F8FF' : '#FAFAFA';
-    document.documentElement.style.setProperty('--row-h', tweaks.density === 'compact' ? '40px' : '52px');
-    document.documentElement.style.setProperty('--row-padding-y', tweaks.density === 'compact' ? '8px' : '14px');
-    document.documentElement.style.setProperty('--table-font-size', tweaks.density === 'compact' ? '13px' : '16px');
-    document.documentElement.style.setProperty('--table-secondary-font-size', tweaks.density === 'compact' ? '12px' : '13px');
+    document.documentElement.style.setProperty('--row-h', tweaks.density === 'compact' ? '48px' : '64px');
+    document.documentElement.style.setProperty('--row-padding-y', tweaks.density === 'compact' ? '10px' : '18px');
+    document.documentElement.style.setProperty('--table-font-size', tweaks.density === 'compact' ? '16px' : '20px');
+    document.documentElement.style.setProperty('--table-secondary-font-size', tweaks.density === 'compact' ? '13px' : '16px');
   }, [tweaks]);
 
   useEffect(() => {
