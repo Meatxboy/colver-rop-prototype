@@ -74,7 +74,7 @@ function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenC
   ];
 
   const fieldLabel = txt => (
-    <div style={{fontSize:11, fontWeight:600, color:'var(--muted-foreground)',
+    <div style={{fontSize:12, fontWeight:600, color:'var(--muted-foreground)',
       textTransform:'uppercase', letterSpacing:.4, marginBottom:5}}>{txt}</div>
   );
 
@@ -250,7 +250,7 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
     fontFamily:'inherit', background:'#fff', transition:'border-color .15s',
   };
   const fieldLabel = txt => (
-    <div style={{fontSize:11, fontWeight:600, color:'var(--muted-foreground)',
+    <div style={{fontSize:12, fontWeight:600, color:'var(--muted-foreground)',
       textTransform:'uppercase', letterSpacing:.4, marginBottom:5}}>{txt}</div>
   );
 
@@ -272,7 +272,7 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
             {/* Status dot + col name */}
             <div style={{width:8,height:8,borderRadius:'50%',background:col.dot,flexShrink:0}}/>
             <span style={{fontSize:12,fontWeight:600,color:'var(--muted-foreground)'}}>{col.label}</span>
-            <span style={{fontSize:11,color:'var(--muted-foreground)',marginLeft:4,opacity:.5}}>#{task.id}</span>
+            <span style={{fontSize:12,color:'var(--muted-foreground)',marginLeft:4,opacity:.5}}>#{task.id}</span>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:4}}>
             <button
@@ -351,7 +351,7 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
                 onChange={e => set('dueDate', e.target.value)}
                 style={{...inputStyle, color: isOverdue ? '#B91C1C' : 'inherit'}}/>
               {isOverdue && (
-                <div style={{fontSize:11,color:'#B91C1C',marginTop:4,fontWeight:500}}>
+                <div style={{fontSize:12,color:'#B91C1C',marginTop:4,fontWeight:500}}>
                   ⚠ Просрочена
                 </div>
               )}
@@ -385,15 +385,15 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
 
           {/* Meta */}
           <div style={{display:'flex',alignItems:'center',gap:16,paddingTop:2}}>
-            <span style={{fontSize:11,color:'var(--muted-foreground)'}}>
+            <span style={{fontSize:12,color:'var(--muted-foreground)'}}>
               Создана: <strong>{task.createdAt || '—'}</strong>
             </span>
-            <span style={{fontSize:11,color:'var(--muted-foreground)'}}>
+            <span style={{fontSize:12,color:'var(--muted-foreground)'}}>
               ID: <strong>{task.id}</strong>
             </span>
             {/* Priority badge preview */}
             <span style={{background:prio.bg,color:prio.color,borderRadius:4,
-              padding:'2px 7px',fontSize:10.5,fontWeight:600,marginLeft:'auto'}}>
+              padding:'2px 7px',fontSize:11,fontWeight:600,marginLeft:'auto'}}>
               {prio.label}
             </span>
           </div>
@@ -468,7 +468,7 @@ function TaskCard({ task, onDragStart, onDragEnd, onOpenCall, onDelete, onOpenDe
       {/* Priority + delete */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
         <span style={{background:prio.bg,color:prio.color,borderRadius:4,
-          padding:'2px 6px',fontSize:10,fontWeight:600}}>{prio.label}</span>
+          padding:'2px 6px',fontSize:11,fontWeight:600}}>{prio.label}</span>
         <button
           onClick={e => { e.stopPropagation(); onDelete(task.id); }}
           style={{background:'none',border:'none',padding:2,cursor:'pointer',
@@ -496,14 +496,14 @@ function TaskCard({ task, onDragStart, onDragEnd, onOpenCall, onDelete, onOpenDe
         <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:4}}>
           {task.manager
             ? <><Avatar name={task.manager} size={16} style={{flexShrink:0}}/>
-                <span style={{fontSize:11,color:'var(--muted-foreground)',
+                <span style={{fontSize:12,color:'var(--muted-foreground)',
                   overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>
                   {managerShort}</span></>
-            : <span style={{fontSize:11,color:'var(--muted-foreground)',fontStyle:'italic'}}>—</span>
+            : <span style={{fontSize:12,color:'var(--muted-foreground)',fontStyle:'italic'}}>—</span>
           }
         </div>
         {dueFmt && (
-          <span style={{fontSize:10.5,fontWeight:isOverdue?600:400,flexShrink:0,
+          <span style={{fontSize:11,fontWeight:isOverdue?600:400,flexShrink:0,
             color:isOverdue?'#B91C1C':'#71717A',marginLeft:4}}>
             {isOverdue?'⚠ ':''}{dueFmt}
           </span>
@@ -522,7 +522,7 @@ function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOver, onDrop, 
         <div style={{width:7,height:7,borderRadius:'50%',background:col.dot,flexShrink:0}}/>
         <span style={{fontWeight:600,fontSize:12,whiteSpace:'nowrap'}}>{col.label}</span>
         <span style={{background:'var(--secondary)',color:'var(--muted-foreground)',
-          borderRadius:10,padding:'1px 6px',fontSize:10.5,fontWeight:600}}>{tasks.length}</span>
+          borderRadius:10,padding:'1px 6px',fontSize:11,fontWeight:600}}>{tasks.length}</span>
       </div>
 
       {/* Drop zone */}
@@ -542,7 +542,7 @@ function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOver, onDrop, 
         ))}
         {tasks.length === 0 && (
           <div style={{textAlign:'center',color:'var(--muted-foreground)',
-            fontSize:11.5,padding:'20px 0',opacity:.4}}>Нет задач</div>
+            fontSize:12,padding:'20px 0',opacity:.4}}>Нет задач</div>
         )}
       </div>
 
@@ -676,4 +676,4 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, data }) {
   );
 }
 
-Object.assign(window, { TasksPage, TaskCreateModal, initTasks });
+Object.assign(window, { TasksPage, TaskCreateModal, TaskDetailModal, initTasks });

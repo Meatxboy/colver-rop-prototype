@@ -28,7 +28,10 @@ function CallDetail({ call, data, onBack, onOpenManager }) {
           <div className="cd-header-meta">
             <div className="cd-title">Звонок {call.id}</div>
             <div className="cd-meta-row">
-              <span>{call.datetime}</span>
+              <span style={{display:'inline-flex', alignItems:'center', gap:4}}>
+                <CallDirectionIcon direction={call.direction} answered={call.answered} size={14}/>
+                <span>{call.datetime}</span>
+              </span>
               <span className="cd-dot">·</span>
               <span>{call.duration}</span>
               <span className="cd-dot">·</span>
@@ -125,7 +128,7 @@ function CallDetail({ call, data, onBack, onOpenManager }) {
 }
 
 // ── Call Modal (открывает карточку звонка поверх текущей страницы) ────────
-function CallModal({ callId, data, onClose, onCreateTask }) {
+function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
   const baseCall = data.calls.find(c => c.id === callId) || data.calls[0];
   const detail   = data.callDetails[callId] || data.callDetails[data.calls[0]?.id] || {};
   const call     = { ...baseCall, ...detail };
@@ -145,6 +148,9 @@ function CallModal({ callId, data, onClose, onCreateTask }) {
   const scoreClass = scoreV10 >= 8 ? 'is-good' : scoreV10 >= 6 ? 'is-warn' : scoreV10 >= 4 ? 'is-default' : 'is-bad';
   const mainRec   = (call.recommendations || [])[0];
   const otherClient = call.client;
+  // Open-task indicator (matches the dashboard one). Strip C- prefix like adapter does.
+  const norm = (id) => String(id || '').replace(/^C-/, '');
+  const openTask = (tasks || []).find(t => norm(t.callId) === norm(call.id || callId) && t.status !== 'done' && t.status !== 'partial') || null;
 
   return (
     <div
@@ -165,6 +171,14 @@ function CallModal({ callId, data, onClose, onCreateTask }) {
             </span>
           </div>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            {openTask && (
+              <button type="button" className="task-indicator is-chip"
+                title={`Перейти к задаче · ${openTask.id}`}
+                onClick={() => onOpenTask && onOpenTask(openTask)}>
+                <Icon.taskBadge size={13}/>
+                <span>Есть задача</span>
+              </button>
+            )}
             <Button variant="outline" size="md"><Icon.download size={13}/> Экспорт</Button>
             <Button variant="default" size="md"><Icon.send size={13}/> Обратная связь</Button>
             <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',padding:6,
@@ -183,7 +197,10 @@ function CallModal({ callId, data, onClose, onCreateTask }) {
             <div className="cd-header-meta">
               <div className="cd-title">Звонок {call.id || callId}</div>
               <div className="cd-meta-row">
-                <span>{call.datetime}</span>
+                <span style={{display:'inline-flex', alignItems:'center', gap:4}}>
+                  <CallDirectionIcon direction={call.direction} answered={call.answered} size={14}/>
+                  <span>{call.datetime}</span>
+                </span>
                 <span className="cd-dot">·</span>
                 <span>{call.duration}</span>
                 <span className="cd-dot">·</span>
@@ -330,12 +347,12 @@ function ProcessedPage({ data, onOpenCall }) {
                 <td className="muted" style={{fontSize:12}}>{p.date}</td>
                 <td>
                   <div style={{fontWeight:500}}>{p.problem}</div>
-                  <div className="muted" style={{fontSize:11.5, marginTop:2}}>Звонок #{p.callId}</div>
+                  <div className="muted" style={{fontSize:12, marginTop:2}}>Звонок #{p.callId}</div>
                 </td>
                 <td>
                   <div style={{display:'flex',alignItems:'center',gap:8}}>
                     <Avatar name={p.manager} size={24}/>
-                    <span style={{fontSize:12.5}}>{p.manager}</span>
+                    <span>{p.manager}</span>
                   </div>
                 </td>
                 <td>
@@ -375,12 +392,12 @@ function AnalyticsPage({ data, period, setPeriod }) {
         <Card className="kpi-card">
           <div className="kpi-label">Звонков за период</div>
           <div className="kpi-value-row"><div className="kpi-value">487</div></div>
-          <div className="kpi-meta"><Delta value={12} suffix="%"/><span className="muted" style={{fontSize:11}}>vs пред. период</span></div>
+          <div className="kpi-meta"><Delta value={12} suffix="%"/><span className="muted" style={{fontSize:12}}>vs пред. период</span></div>
         </Card>
         <Card className="kpi-card">
           <div className="kpi-label">Ср. длительность</div>
           <div className="kpi-value-row"><div className="kpi-value">6:24</div></div>
-          <div className="kpi-meta"><Delta value={-8} suffix="%"/><span className="muted" style={{fontSize:11}}>сократилась</span></div>
+          <div className="kpi-meta"><Delta value={-8} suffix="%"/><span className="muted" style={{fontSize:12}}>сократилась</span></div>
         </Card>
         <Card className="kpi-card">
           <div className="kpi-label">Воронка → продажа</div>

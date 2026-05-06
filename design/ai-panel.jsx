@@ -79,12 +79,12 @@ function AiPanel({ onClose, onCollapse, context, messages: extMessages, setMessa
             )}
           </Fragment>
         ))}
-        {thinking && <div className="ai-msg-assistant"><div className="ai-typing"><span className="ai-typing-dot"></span><span className="ai-typing-dot" style={{animationDelay:'.15s'}}></span><span className="ai-typing-dot" style={{animationDelay:'.3s'}}></span><span style={{fontSize:11.5,color:'#6366F1',marginLeft:4}}>Анализирую данные...</span></div></div>}
+        {thinking && <div className="ai-msg-assistant"><div className="ai-typing"><span className="ai-typing-dot"></span><span className="ai-typing-dot" style={{animationDelay:'.15s'}}></span><span className="ai-typing-dot" style={{animationDelay:'.3s'}}></span><span style={{fontSize:12,color:'#6366F1',marginLeft:4}}>Анализирую данные...</span></div></div>}
       </div>
 
       {messages.length <= 2 && (
         <div className="ai-quick">
-          <div style={{fontSize:11, fontWeight:700, color:'var(--muted-foreground)', textTransform:'uppercase', letterSpacing:'0.06em', padding:'4px 0 2px'}}>Подсказки</div>
+          <div style={{fontSize:12, fontWeight:700, color:'var(--muted-foreground)', textTransform:'uppercase', letterSpacing:'0.06em', padding:'4px 0 2px'}}>Подсказки</div>
           {quickPrompts.map(q => (
             <button key={q} className="ai-quick-btn" onClick={()=>send(q)}>{q}</button>
           ))}
@@ -103,7 +103,7 @@ function AiPanel({ onClose, onCollapse, context, messages: extMessages, setMessa
             <Icon.send size={12}/>
           </button>
         </div>
-        <div style={{display:'flex', justifyContent:'space-between', marginTop:6, fontSize:10.5, color:'var(--muted-foreground)'}}>
+        <div style={{display:'flex', justifyContent:'space-between', marginTop:6, fontSize:11, color:'var(--muted-foreground)'}}>
           <span>Контекст: команда А · {context || 'дашборд'}</span>
           <span>⏎ отправить</span>
         </div>

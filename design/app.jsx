@@ -13,12 +13,22 @@ function App() {
   // ── Tasks state (lifted so modal is accessible from Dashboard + CallModal) ──
   const [tasks, setTasks] = useState(() => initTasks(window.MOCK_DATA));
   const [createTaskPrefill, setCreateTaskPrefill] = useState(null); // null = closed
+  const [taskDetailId, setTaskDetailId] = useState(null);            // null = closed
 
   const openCreateTask = (prefill = {}) => setCreateTaskPrefill(prefill);
   const closeCreateTask = () => setCreateTaskPrefill(null);
+  const openTaskDetail = (taskOrId) => setTaskDetailId(typeof taskOrId === 'string' ? taskOrId : taskOrId?.id);
+  const closeTaskDetail = () => setTaskDetailId(null);
+  const taskDetailObj = tasks.find(t => t.id === taskDetailId) || null;
   const handleSaveTask = (task) => {
     setTasks(ts => [task, ...ts]);
     showToast('Задача создана');
+  };
+  const handleUpdateTask = (task) => {
+    setTasks(ts => ts.map(t => t.id === task.id ? task : t));
+  };
+  const handleDeleteTask = (id) => {
+    setTasks(ts => ts.filter(t => t.id !== id));
   };
 
   // ── Notifications ──────────────────────────────────────────────────────
@@ -54,8 +64,10 @@ function App() {
     setAiOpen(tweaks.aiOpen);
     setPeriod(tweaks.period);
     document.body.style.background = tweaks.bgTone === 'white' ? '#fff' : tweaks.bgTone === 'cool' ? '#F5F8FF' : '#FAFAFA';
-    document.documentElement.style.setProperty('--row-h', tweaks.density === 'compact' ? '36px' : '44px');
-    document.documentElement.style.setProperty('--row-padding-y', tweaks.density === 'compact' ? '6px' : '10px');
+    document.documentElement.style.setProperty('--row-h', tweaks.density === 'compact' ? '40px' : '48px');
+    document.documentElement.style.setProperty('--row-padding-y', tweaks.density === 'compact' ? '8px' : '12px');
+    document.documentElement.style.setProperty('--table-font-size', tweaks.density === 'compact' ? '13px' : '14px');
+    document.documentElement.style.setProperty('--table-secondary-font-size', '12px'); // hard floor per spec
   }, [tweaks]);
 
   useEffect(() => {
@@ -78,7 +90,10 @@ function App() {
     return { tab: ratingsTab, setTab: setRatingsTab, list: sorted };
   }, [data.managers, ratingsTab]);
 
-  const dashboardData = { ...data, queue: queueData };
+  // Period filter (object form { kind, … } or legacy string) → swap KPIs.
+  const periodKind = (typeof period === 'string' ? period : period?.kind) || 'week';
+  const dashboardKpis = data.kpisByPeriod?.[periodKind] || data.kpis;
+  const dashboardData = { ...data, queue: queueData, kpis: dashboardKpis };
 
   const openCall = (id) => { setCallModalId(id); setNotifOpen(false); };
   const openManager = (id) => setRoute({ page:'manager', managerId: id });
@@ -88,7 +103,7 @@ function App() {
     setTimeout(()=>setToast(null), 2400);
   };
 
-  const handleProcess = (queueItemId, action) => {
+  const handleProcess = (queueItemId, action, comment = null) => {
     setData(d => ({
       ...d,
       queue: d.queue.filter(i => i.id !== queueItemId),
@@ -99,6 +114,7 @@ function App() {
           problem: d.queue.find(i => i.id === queueItemId)?.problem,
           manager: d.queue.find(i => i.id === queueItemId)?.manager,
           action,
+          comment: comment || undefined,
           rop: 'Алексей П.',
           date: 'сейчас',
           outcome: 'pending',
@@ -106,7 +122,10 @@ function App() {
         ...d.processed,
       ]
     }));
-    showToast(action === 'feedback' ? 'Обратная связь отправлена менеджеру' : action === 'meeting' ? 'Разбор назначен на завтра 14:00' : 'Кейс закрыт');
+    const baseMsg = action === 'feedback' ? 'Обратная связь отправлена менеджеру'
+      : action === 'meeting' ? 'Разбор назначен на завтра 14:00'
+      : 'Кейс закрыт';
+    showToast(comment ? `${baseMsg} · комментарий сохранён` : baseMsg);
   };
 
   // ── Modal visibility rules ─────────────────────────────────────────────
@@ -118,7 +137,7 @@ function App() {
   let pageContent = null;
   let breadcrumbs = null;
   if (route.page === 'dashboard') {
-    pageContent = <Dashboard data={dashboardData} onOpenCall={openCall} onOpenManager={openManager} period={period} setPeriod={setPeriod} onProcess={handleProcess} onCreateTask={openCreateTask}/>;
+    pageContent = <Dashboard data={dashboardData} onOpenCall={openCall} onOpenManager={openManager} period={period} setPeriod={setPeriod} onProcess={handleProcess} onCreateTask={openCreateTask} tasks={tasks} onOpenTask={openTaskDetail}/>;
   } else if (route.page === 'calls') {
     pageContent = <CallsPage data={data} onOpenCall={openCall} period={period} setPeriod={setPeriod}/>;
     breadcrumbs = [{ label:'Звонки' }];
@@ -170,7 +189,8 @@ function App() {
       {/* Call modal (z:300) — hidden when TaskCreateModal is on top */}
       {callModalId && (
         <div style={callModalHidden ? {visibility:'hidden',pointerEvents:'none'} : {}}>
-          <CallModal callId={callModalId} data={data} onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}/>
+          <CallModal callId={callModalId} data={data} tasks={tasks} onOpenTask={openTaskDetail}
+            onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}/>
         </div>
       )}
 
@@ -185,12 +205,29 @@ function App() {
         />
       )}
 
-      {aiOpen && <AiPanel
-        onClose={()=>{ setAiOpen(false); setAiMessages(null); }}
-        onCollapse={()=>setAiOpen(false)}
-        messages={aiMessages}
-        setMessages={setAiMessages}
-        context={aiContext}/>}
+      {/* Task detail modal — global, opened from queue task indicator */}
+      {taskDetailObj && (
+        <TaskDetailModal
+          task={taskDetailObj}
+          managers={data.managers}
+          onClose={closeTaskDetail}
+          onSave={handleUpdateTask}
+          onDelete={handleDeleteTask}
+          onOpenCall={openCall}
+        />
+      )}
+
+      {aiOpen && <Fragment>
+        {/* Backdrop is hidden by default; CSS shows it only when viewport
+            is too narrow to keep the panel inline (≤1230px). */}
+        <div className="ai-panel-backdrop" onClick={()=>setAiOpen(false)}/>
+        <AiPanel
+          onClose={()=>{ setAiOpen(false); setAiMessages(null); }}
+          onCollapse={()=>setAiOpen(false)}
+          messages={aiMessages}
+          setMessages={setAiMessages}
+          context={aiContext}/>
+      </Fragment>}
       <Tweaks tweaks={tweaks} setTweaks={setTweaks} visible={tweaksVisible} setVisible={setTweaksVisible}/>
 
       {toast && <div style={{
@@ -201,6 +238,8 @@ function App() {
       }}>
         <Icon.check size={14}/> {toast}
       </div>}
+
+      <CookieBanner/>
     </div>
   );
 }
