@@ -56,6 +56,7 @@ function App() {
     document.body.style.background = tweaks.bgTone === 'white' ? '#fff' : tweaks.bgTone === 'cool' ? '#F5F8FF' : '#FAFAFA';
     document.documentElement.style.setProperty('--row-h', tweaks.density === 'compact' ? '36px' : '44px');
     document.documentElement.style.setProperty('--row-padding-y', tweaks.density === 'compact' ? '6px' : '10px');
+    document.documentElement.style.setProperty('--table-font-size', tweaks.density === 'compact' ? '12px' : '13px');
   }, [tweaks]);
 
   useEffect(() => {
@@ -185,12 +186,17 @@ function App() {
         />
       )}
 
-      {aiOpen && <AiPanel
-        onClose={()=>{ setAiOpen(false); setAiMessages(null); }}
-        onCollapse={()=>setAiOpen(false)}
-        messages={aiMessages}
-        setMessages={setAiMessages}
-        context={aiContext}/>}
+      {aiOpen && <Fragment>
+        {/* Backdrop is hidden by default; CSS shows it only when viewport
+            is too narrow to keep the panel inline (≤1230px). */}
+        <div className="ai-panel-backdrop" onClick={()=>setAiOpen(false)}/>
+        <AiPanel
+          onClose={()=>{ setAiOpen(false); setAiMessages(null); }}
+          onCollapse={()=>setAiOpen(false)}
+          messages={aiMessages}
+          setMessages={setAiMessages}
+          context={aiContext}/>
+      </Fragment>}
       <Tweaks tweaks={tweaks} setTweaks={setTweaks} visible={tweaksVisible} setVisible={setTweaksVisible}/>
 
       {toast && <div style={{

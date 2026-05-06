@@ -297,7 +297,7 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask }) {
                   <div className="problem-sub">{item.subTitle || `Клиент ${item.client}`}</div>
                 </td>
                 <td>
-                  <span style={{fontSize:13, fontWeight:600}}>{item.manager}</span>
+                  <span style={{fontWeight:600}}>{item.manager}</span>
                 </td>
                 <td className="tac"><ScoreCell value={item.score} max={5}/></td>
                 <td className="tar age-cell"><span className={item.ageMin <= 30 ? 'age-fresh' : ''}>{item.age}</span></td>
@@ -372,7 +372,7 @@ function ManagementQueue({ items, onProcess }) {
                   <div className="problem-title">{item.type}</div>
                   <div className="problem-sub">{item.desc}</div>
                 </td>
-                <td><span style={{fontSize:12.5, fontWeight:500}}>{item.employee}</span></td>
+                <td><span style={{fontWeight:500}}>{item.employee}</span></td>
                 <td className="tar age-cell"><span className={item.age && item.age.includes('мин') ? 'age-fresh' : ''}>{item.age}</span></td>
                 <td className="tar">
                   <div className="actions-cell">
@@ -436,7 +436,7 @@ function PracticesQueue({ items }) {
                   <div className="problem-title">{item.title}</div>
                   <div className="problem-sub">{item.desc}</div>
                 </td>
-                <td><span style={{fontSize:12.5, fontWeight:500}}>{item.author}</span></td>
+                <td><span style={{fontWeight:500}}>{item.author}</span></td>
                 <td className="tar"><Delta value={parseFloat(item.convGrowth)} suffix="%"/></td>
                 <td className="tar" style={{fontVariantNumeric:'tabular-nums'}}>{item.calls}</td>
                 <td className="tar">
@@ -741,7 +741,7 @@ function ManagersTable({ rows, onOpen }) {
               <tr key={m.id} className="is-clickable" onClick={()=>onOpen(m.id)}>
                 {/* Sticky name cell */}
                 <td style={{position:'sticky', left:0, background:'var(--card)', zIndex:1, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
-                  <div style={{fontWeight:600, fontSize:13}}>{m.name}</div>
+                  <div style={{fontWeight:600}}>{m.name}</div>
                   <div className="muted" style={{fontSize:11}}>{m.role || 'Менеджер'}</div>
                 </td>
                 <td className="tar">

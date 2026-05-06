@@ -335,7 +335,7 @@ function ProcessedPage({ data, onOpenCall }) {
                 <td>
                   <div style={{display:'flex',alignItems:'center',gap:8}}>
                     <Avatar name={p.manager} size={24}/>
-                    <span style={{fontSize:12.5}}>{p.manager}</span>
+                    <span>{p.manager}</span>
                   </div>
                 </td>
                 <td>
