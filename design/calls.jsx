@@ -8,8 +8,8 @@ function AgGridReactLite({ rowData, columnDefs, onRowClicked, pageSize=20, pageS
     const gridOptions = {
       columnDefs,
       rowData,
-      rowHeight: 64,
-      headerHeight: 48,
+      rowHeight: 48,
+      headerHeight: 40,
       suppressCellFocus: true,
       animateRows: true,
       pagination: true,
@@ -85,7 +85,7 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
     ? '<span style="color:#16A34A;font-weight:600">+</span>'
     : '<span style="color:#DC2626;font-weight:600">−</span>';
 
-  const textCell = p => `<span style="font-size:16px;color:#52525B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:240px" title="${(p.value||'').replace(/"/g,"'")}">${p.value||'—'}</span>`;
+  const textCell = p => `<span style="font-size:12px;color:#52525B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:200px" title="${(p.value||'').replace(/"/g,"'")}">${p.value||'—'}</span>`;
 
   // Direction icon for AG Grid (rule 5). Outgoing = ↗, incoming = ↙. Red when not answered.
   // SVG paths mirror the lucide arrow-up-right / arrow-down-left used by Icon.* in ui.jsx.

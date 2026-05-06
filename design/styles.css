@@ -54,15 +54,15 @@
   --header-h: 56px;
 
   /* Density */
-  --row-h: 64px;
-  --row-padding-y: 18px;
+  --row-h: 48px;
+  --row-padding-y: 12px;
 
-  /* Table typography (single source of truth)
-     Primary 20px / secondary 16px / header 14px per desktop-readability spec.
-     Compact density (Tweaks) drops these to 16/13/12 in app.jsx. */
-  --table-font-size: 20px;
-  --table-secondary-font-size: 16px;
-  --table-header-font-size: 14px;
+  /* Table typography — primary 14, footnote/secondary 12 (the stated floor),
+     header 12 uppercase. Same values across every table on the site so the
+     visual rhythm matches. Compact density drops primary to 13. */
+  --table-font-size: 14px;
+  --table-secondary-font-size: 12px;
+  --table-header-font-size: 12px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -674,20 +674,24 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .dashboard-row-1 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 16px; }
 .dashboard-row-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
 
-/* Analytics frame — sticky header pinned below the topbar so the period
-   filter stays accessible while scrolling through KPIs/ratings/etc. */
+/* Analytics — semantically grouped (sticky header + body) but visually flat:
+   no outer border or fill, just the sticky title strip + a stack of inner
+   cards. Bigger gap from the queue card above (margin-top adds to .content's
+   gap of 16 → total ≈ 32px). */
 .analytics-frame {
-  /* overflow MUST be visible so position: sticky works on the inner header */
-  overflow: visible;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  margin-top: 16px;
+  overflow: visible; /* required for sticky descendants */
 }
 .analytics-header {
   position: sticky;
   top: var(--header-h);
-  z-index: 14; /* below topbar (15) and AI panel (10 in inline mode), above content */
-  background: #fff;
+  z-index: 14; /* below topbar (15), above content */
+  background: #FAFAFA; /* matches default page bg so it covers scrolled content cleanly */
   border-bottom: 1px solid var(--border);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: 16px 20px;
+  padding: 12px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -695,7 +699,7 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
   flex-wrap: wrap;
 }
 .analytics-body {
-  padding: 16px 20px;
+  padding: 16px 0 0 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -704,12 +708,13 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
    as the available space shrinks. Triggers on AI-panel open without media-q. */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 
-.kpi-card { padding: 18px 20px; }
-.kpi-label { font-size: 14px; color: var(--muted-foreground); font-weight: 500; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.kpi-value-row { display: flex; align-items: baseline; gap: 5px; margin-top: 10px; }
-.kpi-value { font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
-.kpi-unit { font-size: 14px; color: var(--muted-foreground); }
-.kpi-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; white-space: nowrap; }
+.kpi-card { padding: 16px 18px; }
+/* KPI label/unit/delta are footnotes per spec (12px); KPI value stays large. */
+.kpi-label { font-size: var(--table-secondary-font-size); color: var(--muted-foreground); font-weight: 500; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.kpi-value-row { display: flex; align-items: baseline; gap: 5px; margin-top: 8px; }
+.kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+.kpi-unit { font-size: var(--table-secondary-font-size); color: var(--muted-foreground); }
+.kpi-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; white-space: nowrap; }
 .kpi-spark { color: var(--muted-foreground); }
 .kpi-card.is-danger .kpi-value { color: var(--danger); }
 .kpi-card.is-warning .kpi-value { color: var(--warning); }
@@ -783,7 +788,7 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
   text-transform: uppercase; letter-spacing: 0.06em;
   margin-bottom: 6px;
 }
-.recommendation-text { font-size: 12.5px; color: #3F3F46; line-height: 1.6; }
+.recommendation-text { font-size: var(--table-secondary-font-size); color: #3F3F46; line-height: 1.6; }
 .expanded-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); }
 
 /* ── Rating ──────────────────────────────────────────────────────────── */
@@ -797,11 +802,11 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 
 /* ── Loss reasons ────────────────────────────────────────────────────── */
 .reason-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
-.reason-name { flex: 1; font-size: 14px; color: var(--foreground); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reason-name { flex: 1; font-size: var(--table-font-size); color: var(--foreground); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reason-bar-track { flex: 1.4; height: 6px; background: var(--secondary); border-radius: 3px; overflow: hidden; max-width: 200px; }
 .reason-bar-fill { height: 100%; background: var(--danger); border-radius: 3px; }
-.reason-count { font-size: 13px; color: var(--muted-foreground); width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
-.reason-pct { font-size: 13px; font-weight: 700; color: var(--foreground); width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+.reason-count { font-size: var(--table-secondary-font-size); color: var(--muted-foreground); width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+.reason-pct { font-size: var(--table-secondary-font-size); font-weight: 700; color: var(--foreground); width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ── AG Grid theming overrides ───────────────────────────────────────── */
 .ag-theme-quartz {
@@ -817,11 +822,11 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
   --ag-row-hover-color: #FAFAFA;
   --ag-selected-row-background-color: #EFF4FF;
   --ag-odd-row-background-color: #fff;
-  --ag-cell-horizontal-padding: 14px;
+  --ag-cell-horizontal-padding: 12px;
   --ag-grid-size: 5px;
-  --ag-list-item-height: 36px;
-  --ag-row-height: 64px;
-  --ag-header-height: 48px;
+  --ag-list-item-height: 32px;
+  --ag-row-height: 48px;
+  --ag-header-height: 40px;
   --ag-cell-widget-spacing: 6px;
   --ag-active-color: var(--primary);
   --ag-input-focus-border-color: var(--primary);
@@ -836,7 +841,7 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .master-detail-panel { padding: 16px 22px; background: #FAFAFA; border-bottom: 1px solid var(--border); }
 .mdp-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
 .mdp-section-title { font-size: 11px; font-weight: 700; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-.mdp-text { font-size: 12.5px; color: var(--foreground); line-height: 1.6; }
+.mdp-text { font-size: var(--table-secondary-font-size); color: var(--foreground); line-height: 1.6; }
 
 /* ── Charts ──────────────────────────────────────────────────────────── */
 .bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 140px; padding: 8px 0; }
