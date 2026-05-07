@@ -880,13 +880,13 @@ function ManagersTable({ rows, onOpen }) {
             <tr>
               {/* Sticky first column */}
               <th onClick={()=>onSort('name')} className="sortable"
-                style={{position:'sticky', left:0, background:'var(--card)', zIndex:2, minWidth:160, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
+                style={{position:'sticky', left:0, background:'var(--card)', zIndex:2, minWidth:130, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
                 Специалист<SI k="name"/>
               </th>
               <th onClick={()=>onSort('calls')} className="sortable tar" style={{minWidth:80}}>Звонков<SI k="calls"/></th>
               <th onClick={()=>onSort('success')} className="sortable tar" style={{minWidth:80}}>Успешные<SI k="success"/></th>
-              <th onClick={()=>onSort('conversion')} className="sortable tar" style={{minWidth:90}}>CR<SI k="conversion"/></th>
-              <th onClick={()=>onSort('score')} className="sortable tac" style={{minWidth:100}}>Ср. оценка<SI k="score"/></th>
+              <th onClick={()=>onSort('conversion')} className="sortable tar" style={{minWidth:130}}>CR в целевое действие<SI k="conversion"/></th>
+              <th onClick={()=>onSort('score')} className="sortable tar" style={{minWidth:100}}>Ср. оценка<SI k="score"/></th>
               <th onClick={()=>onSort('objIdent')} className="sortable tar" style={{minWidth:110}}>Возр. выявлено<SI k="objIdent"/></th>
               <th onClick={()=>onSort('objHandled')} className="sortable tar" style={{minWidth:120}}>Возр. отработано<SI k="objHandled"/></th>
               <th onClick={()=>onSort('scriptCompliance')} className="sortable tar" style={{minWidth:80}}>Скрипт<SI k="scriptCompliance"/></th>
@@ -910,7 +910,7 @@ function ManagersTable({ rows, onOpen }) {
                 <td className="tar">
                   <RedCell value={m.conversion} isRed={isConvRed(m)} suffix="%"/>
                 </td>
-                <td className="tac">
+                <td className="tar">
                   <span style={{
                     fontWeight:700, fontVariantNumeric:'tabular-nums',
                     color: isScoreRed(m) ? 'var(--danger-strong)' : m.score >= 4 ? 'var(--success-strong)' : 'var(--warning-strong)'
