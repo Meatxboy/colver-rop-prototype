@@ -38,7 +38,7 @@ function initTasks(data) {
 function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenCall }) {
   const [form, setForm] = useState({
     title:    prefill.title    || '',
-    text:     '',
+    text:     prefill.text     || '',
     manager:  prefill.manager  || '',
     priority: prefill.priority || 'medium',
     status:   prefill.status   || 'planned',

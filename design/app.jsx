@@ -190,7 +190,8 @@ function App() {
       {callModalId && (
         <div style={callModalHidden ? {visibility:'hidden',pointerEvents:'none'} : {}}>
           <CallModal callId={callModalId} data={data} tasks={tasks} onOpenTask={openTaskDetail}
-            onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}/>
+            onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}
+            onResolveCall={(qid, comment)=>{ handleProcess(qid, 'done', comment); setCallModalId(null); }}/>
         </div>
       )}
 

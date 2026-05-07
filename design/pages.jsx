@@ -128,7 +128,9 @@ function CallDetail({ call, data, onBack, onOpenManager }) {
 }
 
 // ── Call Modal (открывает карточку звонка поверх текущей страницы) ────────
-function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
+const PLAYBACK_SPEEDS = [1, 1.25, 1.5, 2, 0.75];
+
+function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask, onResolveCall }) {
   const baseCall = data.calls.find(c => c.id === callId) || data.calls[0];
   const detail   = data.callDetails[callId] || data.callDetails[data.calls[0]?.id] || {};
   const call     = { ...baseCall, ...detail };
@@ -141,6 +143,9 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
 
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0.18);
+  const [speedIdx, setSpeedIdx] = useState(0);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [resolveOpen, setResolveOpen] = useState(false);
 
   if (!call) return null;
 
@@ -150,7 +155,12 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
   const otherClient = call.client;
   // Open-task indicator (matches the dashboard one). Strip C- prefix like adapter does.
   const norm = (id) => String(id || '').replace(/^C-/, '');
-  const openTask = (tasks || []).find(t => norm(t.callId) === norm(call.id || callId) && t.status !== 'done' && t.status !== 'partial') || null;
+  const openTask = (tasks || []).find(t => norm(t.callId) === norm(callId) && t.status !== 'done' && t.status !== 'partial') || null;
+  // Find queue item for this call (used to enable "Отметить решённым").
+  // Use the raw callId param (not the resolved fallback) so queue C-1841 still matches.
+  const queueItem = (data.queue || []).find(q => norm(q.callId) === norm(callId)) || null;
+  const taskPrefillTitle = queueItem?.problem || (mainRec && mainRec.text ? mainRec.text.slice(0, 80) : '') || `Разобрать звонок ${call.id || callId}`;
+  const taskPrefillText  = queueItem?.recommendation || (mainRec && mainRec.text) || call.summary || '';
 
   return (
     <div
@@ -179,8 +189,6 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
                 <span>Есть задача</span>
               </button>
             )}
-            <Button variant="outline" size="md"><Icon.download size={13}/> Экспорт</Button>
-            <Button variant="default" size="md"><Icon.send size={13}/> Обратная связь</Button>
             <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',padding:6,
               borderRadius:6,color:'var(--muted-foreground)',display:'flex',alignItems:'center'}}
               aria-label="Закрыть">
@@ -209,8 +217,8 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
                 <span style={{fontWeight:500}}>{otherClient}</span>
                 {call.phone && <>
                   <span className="cd-dot">·</span>
-                  <span style={{fontFamily:'SF Mono,Menlo,monospace',fontSize:12.5,color:'var(--muted-foreground)',display:'inline-flex',alignItems:'center',gap:4}}>
-                    <Icon.phone size={11}/>{call.phone}
+                  <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
+                    <Icon.phone size={12}/>{call.phone}
                   </span>
                 </>}
               </div>
@@ -225,7 +233,7 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
             </div>
           </div>
 
-          {/* Двухколоночный grid: критерии + резюме */}
+          {/* Двухколоночный grid: критерии (узкие, без прогресс-бара) + резюме нейроаналитика (шире) */}
           <div className="cd-grid">
             <Card>
               <CardContent>
@@ -235,13 +243,10 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
                   const v10 = c.score;
                   const cls = v10 >= 8 ? 'is-good' : v10 >= 6 ? 'is-warn' : v10 >= 4 ? 'is-default' : 'is-bad';
                   return (
-                    <div key={c.name} className="cd-criterion">
+                    <div key={c.name} className="cd-criterion is-compact">
                       <div className="cd-criterion-head">
                         <span className="cd-criterion-name">{c.name}</span>
                         <span className={cn('cd-criterion-score',cls)}>{c.score}/10</span>
-                      </div>
-                      <div className={cn('cd-criterion-bar',cls)}>
-                        <div className="cd-criterion-fill" style={{width:(c.score*10)+'%'}}/>
                       </div>
                     </div>
                   );
@@ -250,7 +255,7 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
             </Card>
             <Card>
               <CardContent>
-                <div className="cd-section-title">Резюме ИИ</div>
+                <div className="cd-section-title">Резюме нейроаналитика</div>
                 <div className="cd-summary-text">{call.summary}</div>
                 {mainRec && (
                   <div className="cd-recommendation">
@@ -259,21 +264,26 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
                   </div>
                 )}
                 <div className="cd-summary-actions">
-                  <Button variant="default" size="md" onClick={() => onCreateTask && onCreateTask({ manager: call.manager, callId: call.id, priority:'medium' })}><Icon.calendar size={13}/> Создать задачу</Button>
-                  <Button variant="outline" size="md"><Icon.phone size={13}/> Перезвонить</Button>
+                  {openTask
+                    ? <Button variant="default" size="md" onClick={() => onOpenTask && onOpenTask(openTask)}><Icon.calendar size={13}/> Перейти в задачу</Button>
+                    : <Button variant="default" size="md" onClick={() => onCreateTask && onCreateTask({ manager: call.manager, callId: call.id, title: taskPrefillTitle, text: taskPrefillText, priority:'medium' })}><Icon.calendar size={13}/> Создать задачу</Button>
+                  }
+                  {queueItem && (
+                    <Button variant="success" size="md" onClick={() => setResolveOpen(true)}><Icon.check size={13}/> Отметить решённым</Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Транскрипт */}
+          {/* Аудио + скрываемая транскрипция */}
           <Card>
             <CardContent>
               <div className="cd-transcript-head">
-                <div className="cd-section-title" style={{margin:0}}>Транскрипция</div>
+                <div className="cd-section-title" style={{margin:0}}>Аудио звонка</div>
                 <span className="muted" style={{fontSize:12.5}}>{(call.transcript||[]).length} реплик</span>
               </div>
-              <div className="audio-player" style={{marginBottom:16}}>
+              <div className="audio-player" style={{marginBottom:12}}>
                 <button className="player-btn" onClick={()=>setPlaying(!playing)}>
                   {playing ? <Icon.x size={14}/> : <Icon.play size={12}/>}
                 </button>
@@ -284,20 +294,49 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask }) {
                   <div className="player-fill" style={{width:(position*100)+'%'}}/>
                 </div>
                 <div className="player-time">{formatTime(position*(call.durationSec||0))} / {call.duration}</div>
+                <button
+                  type="button"
+                  className="player-speed"
+                  title="Скорость воспроизведения"
+                  onClick={() => setSpeedIdx((speedIdx + 1) % PLAYBACK_SPEEDS.length)}>
+                  {PLAYBACK_SPEEDS[speedIdx]}×
+                </button>
               </div>
-              <div className="cd-transcript">
-                {(call.transcript||[]).map((line,i) => (
-                  <div key={i} className={cn('cd-transcript-line','who-'+line.who)}>
-                    <div className="cd-transcript-time">{line.time}</div>
-                    <div className={cn('cd-transcript-who','who-'+line.who)}>{line.who}</div>
-                    <div className="cd-transcript-text">{line.text}</div>
-                  </div>
-                ))}
+              <div style={{display:'flex', justifyContent:'flex-start'}}>
+                <Button variant="ghost" size="sm" onClick={() => setTranscriptOpen(o => !o)}>
+                  {transcriptOpen
+                    ? <><Icon.chevUp size={14}/> Скрыть транскрибацию</>
+                    : <><Icon.chevDown size={14}/> Показать транскрибацию</>}
+                </Button>
               </div>
+              {transcriptOpen && (
+                <div className="cd-transcript" style={{marginTop:12}}>
+                  {(call.transcript||[]).map((line,i) => (
+                    <div key={i} className={cn('cd-transcript-line','who-'+line.who)}>
+                      <div className="cd-transcript-time">{line.time}</div>
+                      <div className={cn('cd-transcript-who','who-'+line.who)}>{line.who}</div>
+                      <div className="cd-transcript-text">{line.text}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+      {resolveOpen && queueItem && (() => {
+        const RM = window.ResolveModal;
+        return RM ? (
+          <RM
+            item={queueItem}
+            onClose={() => setResolveOpen(false)}
+            onConfirm={(comment) => {
+              setResolveOpen(false);
+              onResolveCall && onResolveCall(queueItem.id, comment);
+            }}
+          />
+        ) : null;
+      })()}
     </div>
   );
 }

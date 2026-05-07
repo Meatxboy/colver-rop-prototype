@@ -337,14 +337,14 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
   }
   return (
     <div>
-      <table className="data-table queue-table">
+      <table className="data-table queue-table attention-table">
         <thead>
           <tr>
             <th style={{width:54}} className="sortable" onClick={()=>onSort('priority')}>Приор.<SortIndicator active={sortKey==='priority'} dir={sortDir}/></th>
             <th>Звонок · проблема</th>
-            <th style={{width:220}} className="sortable" onClick={()=>onSort('manager')}>Менеджер<SortIndicator active={sortKey==='manager'} dir={sortDir}/></th>
-            <th style={{width:64}} className="sortable" onClick={()=>onSort('score')}>Балл<SortIndicator active={sortKey==='score'} dir={sortDir}/></th>
-            <th style={{width:110}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
+            <th style={{width:240}} className="sortable" onClick={()=>onSort('manager')}>Менеджер<SortIndicator active={sortKey==='manager'} dir={sortDir}/></th>
+            <th style={{width:80}} className="sortable" onClick={()=>onSort('score')}>Балл<SortIndicator active={sortKey==='score'} dir={sortDir}/></th>
+            <th style={{width:130}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
             <th style={{width:36}} aria-label=""></th>
             <th style={{width:42}} aria-label=""></th>
           </tr>
@@ -409,7 +409,10 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
                       </div>
                       <div className="expanded-actions">
                         <Button size="lg" variant="default" onClick={()=>onOpenCall(item.callId)}><Icon.phone size={14}/> Открыть звонок</Button>
-                        <Button size="lg" variant="outline" onClick={()=>onCreateTask && onCreateTask({ manager: item.manager, callId: item.callId, title: item.problem, priority: item.priority <= 1 ? 'high' : 'medium' })}><Icon.calendar size={14}/> Поставить задачу менеджеру</Button>
+                        {openTask
+                          ? <Button size="lg" variant="outline" onClick={()=>onOpenTask && onOpenTask(openTask)}><Icon.calendar size={14}/> Перейти в задачу</Button>
+                          : <Button size="lg" variant="outline" onClick={()=>onCreateTask && onCreateTask({ manager: item.manager, callId: item.callId, title: item.problem, text: item.recommendation, priority: item.priority <= 1 ? 'high' : 'medium' })}><Icon.calendar size={14}/> Поставить задачу менеджеру</Button>
+                        }
                         <div style={{flex:1}}></div>
                         <Button size="lg" variant="success" onClick={()=>setResolveItem(item)}><Icon.check size={14}/> Отметить решённым</Button>
                       </div>
@@ -898,4 +901,4 @@ function ManagersTable({ rows, onOpen }) {
   );
 }
 
-Object.assign(window, { Dashboard, AttentionQueue, ManagementQueue, PracticesQueue, ManagersTable });
+Object.assign(window, { Dashboard, AttentionQueue, ManagementQueue, PracticesQueue, ManagersTable, ResolveModal, findOpenTask });
