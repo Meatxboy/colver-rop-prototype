@@ -192,6 +192,34 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .user-card:hover { background: var(--secondary); }
 .user-card .avatar { box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--border); }
 
+/* Pop-up меню пользователя — открывается справа от аватара в sidebar. */
+.user-menu {
+  position: absolute;
+  left: calc(100% + 8px); bottom: 0;
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.14);
+  padding: 6px;
+  z-index: 200;
+}
+.user-menu-head {
+  padding: 8px 10px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
+}
+.user-menu-name { font-size: 13px; font-weight: 600; color: var(--foreground); }
+.user-menu-role { font-size: 12px; color: var(--muted-foreground); margin-top: 2px; }
+.user-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 8px 10px;
+  background: transparent; border: 0; cursor: pointer;
+  font-size: 13px; color: var(--foreground);
+  border-radius: 6px;
+  text-align: left;
+  transition: background .12s, color .12s;
+}
+.user-menu-item:hover { background: var(--danger-soft, #FEE2E2); color: var(--danger-strong, #B91C1C); }
+
 /* ── Dashboard footer ───────────────────────────────────────────────── */
 .dashboard-footer {
   margin-top: 12px;
@@ -229,6 +257,22 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .crumb-sep { color: var(--border-strong); }
 
 .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+/* «Прочитать все» в шапке уведомлений: ghost-кнопка с hover-состоянием. */
+.notif-mark-all {
+  background: #fff; border: 1px solid var(--border); cursor: pointer;
+  padding: 5px 12px; border-radius: 6px;
+  font-size: 12px; font-weight: 500;
+  color: var(--muted-foreground); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.notif-mark-all:hover {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  border-color: var(--primary);
+}
+.notif-mark-all:active { transform: translateY(1px); }
 
 /* Нейроаналитик toggle (Topbar). Скрывается, когда дровер уже открыт. */
 .ai-toggle-btn {

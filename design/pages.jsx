@@ -369,15 +369,13 @@ function ProcessedPage({ data, onOpenCall }) {
       <Card>
         <CardHeader>
           <CardTitle>{items.length} обработанных кейсов</CardTitle>
-          <Tabs tabs={[{key:'all',label:'Все'},{key:'feedback',label:'ОС'},{key:'meeting',label:'Разборы'},{key:'done',label:'Решено'}]} active="all" onChange={()=>{}}/>
         </CardHeader>
         <table className="data-table">
           <thead><tr>
             <th style={{width:90}}>Дата</th>
             <th>Проблема</th>
-            <th style={{width:170}}>Менеджер</th>
-            <th style={{width:130}}>Действие</th>
-            <th style={{width:130}}>РОП</th>
+            <th style={{width:200}}>Менеджер</th>
+            <th style={{width:160}}>Действие</th>
             <th style={{width:90, textAlign:'center'}}>Итог</th>
           </tr></thead>
           <tbody>
@@ -389,17 +387,13 @@ function ProcessedPage({ data, onOpenCall }) {
                   <div className="muted" style={{fontSize:12, marginTop:2}}>Звонок #{p.callId}</div>
                 </td>
                 <td>
-                  <div style={{display:'flex',alignItems:'center',gap:8}}>
-                    <Avatar name={p.manager} size={24}/>
-                    <span>{p.manager}</span>
-                  </div>
+                  <span style={{fontWeight:500}}>{p.manager}</span>
                 </td>
                 <td>
                   {p.action === 'feedback' && <Badge variant="primary"><Icon.send size={10}/> Обратная связь</Badge>}
                   {p.action === 'meeting' && <Badge variant="warning"><Icon.calendar size={10}/> Разбор</Badge>}
                   {p.action === 'done' && <Badge variant="success"><Icon.check size={10}/> Решено</Badge>}
                 </td>
-                <td className="muted" style={{fontSize:12}}>{p.rop}</td>
                 <td className="tac">
                   {p.outcome === 'good' && <span className="score is-good">↑</span>}
                   {p.outcome === 'pending' && <span className="muted">⋯</span>}

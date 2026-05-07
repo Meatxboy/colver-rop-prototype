@@ -78,7 +78,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
 
       {/* Drawer panel */}
       <div style={{
-        position:'fixed', left:50, top:0, bottom:0, width:320, zIndex:120,
+        position:'fixed', left:50, top:0, bottom:0, width:380, zIndex:120,
         background:'#fff', boxShadow:'4px 0 24px rgba(0,0,0,.14)',
         display:'flex', flexDirection:'column',
         animation:'slideInLeft .18s ease',
@@ -86,8 +86,8 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
 
         {/* Header */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-          padding:'16px 16px 14px',borderBottom:'1px solid var(--border)',flexShrink:0}}>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
+          padding:'16px 18px 14px',borderBottom:'1px solid var(--border)',flexShrink:0,gap:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
             <Icon.bell size={16}/>
             <span style={{fontSize:15,fontWeight:700}}>Уведомления</span>
             {unread > 0 && (
@@ -95,14 +95,11 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
                 padding:'1px 7px',fontSize:12,fontWeight:700}}>{unread}</span>
             )}
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
             {unread > 0 && (
               <button
                 onClick={onMarkAllRead}
-                style={{background:'none',border:'1px solid var(--border)',cursor:'pointer',
-                  padding:'4px 10px',borderRadius:6,fontSize:12,fontWeight:500,
-                  color:'var(--muted-foreground)',whiteSpace:'nowrap',display:'flex',
-                  alignItems:'center',gap:5}}
+                className="notif-mark-all"
               >
                 <Icon.check size={11}/> Прочитать все
               </button>
@@ -242,6 +239,18 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
 function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen }) {
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userRef = useRef(null);
+  // Close user menu on outside click.
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onDocClick = (e) => {
+      if (userRef.current && !userRef.current.contains(e.target)) setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [userMenuOpen]);
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand" title="Colver">
@@ -275,10 +284,29 @@ function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen }) {
           )}
         </button>
       </nav>
-      <div className="sidebar-footer">
-        <button className="user-card" title="Алексей Петров · РОП">
+      <div className="sidebar-footer" ref={userRef} style={{position:'relative'}}>
+        <button
+          className="user-card"
+          title="Алексей Петров · РОП"
+          onClick={() => setUserMenuOpen(o => !o)}
+        >
           <Avatar name="Алексей Петров" size={32}/>
         </button>
+        {userMenuOpen && (
+          <div className="user-menu" role="menu">
+            <div className="user-menu-head">
+              <div className="user-menu-name">Алексей Петров</div>
+              <div className="user-menu-role">РОП · Команда А</div>
+            </div>
+            <button
+              type="button"
+              className="user-menu-item"
+              onClick={() => { setUserMenuOpen(false); /* в прототипе — без реального logout */ alert('Сеанс завершён (прототип)'); }}
+            >
+              <Icon.logout size={14}/> Выйти
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
