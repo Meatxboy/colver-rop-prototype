@@ -36,6 +36,7 @@ function initTasks(data) {
 
 // ── TaskCreateModal ───────────────────────────────────────────────────────
 function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenCall }) {
+  const z = useModalZ();
   const [form, setForm] = useState({
     title:    prefill.title    || '',
     text:     prefill.text     || '',
@@ -86,7 +87,7 @@ function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenC
 
   return (
     <div
-      style={{position:'fixed',inset:0,zIndex:400,background:'rgba(9,9,11,.45)',
+      style={{position:'fixed',inset:0,zIndex:z,background:'rgba(9,9,11,.45)',
         backdropFilter:'blur(2px)',display:'flex',alignItems:'center',
         justifyContent:'center',padding:'24px 16px'}}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
@@ -212,7 +213,8 @@ function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenC
 }
 
 // ── TaskDetailModal ───────────────────────────────────────────────────────
-function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpenCall, onMention }) {
+function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpenCall, onMention, onCloseTask }) {
+  const z = useModalZ();
   const [form, setForm] = useState({
     title:    task.title    || '',
     text:     task.text     || '',
@@ -245,6 +247,24 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
   const handleSave = () => {
     if (!form.title.trim()) return;
     persist();
+    onClose();
+  };
+
+  // «Закрыть задачу» — переводит задачу в статус «Выполнено» и сохраняет.
+  // Toast выводится через onCloseTask коллбэк в App.
+  const handleCloseTask = () => {
+    if (!form.title.trim()) return;
+    const updated = {
+      ...task,
+      ...form,
+      status: 'done',
+      manager: form.manager || null,
+      callId: form.callId || null,
+      dueDate: form.dueDate || null,
+      comments,
+    };
+    onSave(updated);
+    onCloseTask && onCloseTask(updated);
     onClose();
   };
 
@@ -349,7 +369,7 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
 
   return (
     <div
-      style={{position:'fixed',inset:0,zIndex:400,background:'rgba(9,9,11,.50)',
+      style={{position:'fixed',inset:0,zIndex:z,background:'rgba(9,9,11,.50)',
         backdropFilter:'blur(3px)',display:'flex',alignItems:'flex-start',
         justifyContent:'center',padding:'40px 16px 24px',overflowY:'auto'}}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
@@ -584,9 +604,10 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
           <Button variant="outline" size="md" onClick={onClose}>Отмена</Button>
           <Button
             variant="default" size="md"
-            onClick={handleSave}
+            onClick={dirty ? handleSave : handleCloseTask}
             disabled={!form.title.trim()}
             style={!form.title.trim() ? {opacity:.5,pointerEvents:'none'} : {}}
+            title={dirty ? 'Сохранить и закрыть модальное окно' : 'Перевести задачу в статус «Выполнено»'}
           >
             <Icon.check size={13}/> {dirty ? 'Сохранить изменения' : 'Закрыть задачу'}
           </Button>
@@ -755,7 +776,7 @@ function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOverCol, onDro
 }
 
 // ── TasksPage ─────────────────────────────────────────────────────────────
-function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, data }) {
+function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, onTaskClosed, data }) {
   const [draggingId, setDraggingId]   = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
   // Drop-target card для вертикального реордеринга внутри колонки.
@@ -932,6 +953,7 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, data 
           onDelete={() => requestDelete(detailTask)}
           onOpenCall={onOpenCall}
           onMention={onMention}
+          onCloseTask={onTaskClosed}
         />
       )}
 
@@ -949,13 +971,14 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, data 
 
 // ── ConfirmDeleteTaskModal ────────────────────────────────────────────────
 function ConfirmDeleteTaskModal({ title, onConfirm, onCancel }) {
+  const z = useModalZ();
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);
   return (
     <div
-      style={{position:'fixed',inset:0,zIndex:500,background:'rgba(9,9,11,.5)',
+      style={{position:'fixed',inset:0,zIndex:z,background:'rgba(9,9,11,.5)',
         backdropFilter:'blur(2px)',display:'flex',alignItems:'center',
         justifyContent:'center',padding:'24px 16px'}}
       onClick={e => { if (e.target === e.currentTarget) onCancel(); }}

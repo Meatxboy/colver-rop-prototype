@@ -274,13 +274,14 @@ const findOpenTask = (tasks, callId) => {
 
 // ── Resolve modal — optional comment when marking a queue case as resolved ──
 function ResolveModal({ item, onClose, onConfirm }) {
+  const z = useModalZ();
   const [comment, setComment] = useState('');
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);
   return (
-    <div style={{position:'fixed', inset:0, zIndex:400, background:'rgba(9,9,11,.45)', backdropFilter:'blur(2px)',
+    <div style={{position:'fixed', inset:0, zIndex:z, background:'rgba(9,9,11,.45)', backdropFilter:'blur(2px)',
       display:'flex', alignItems:'center', justifyContent:'center', padding:'24px'}}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{background:'#fff', borderRadius:12, width:'100%', maxWidth:480, boxShadow:'0 24px 64px rgba(0,0,0,.18)', overflow:'hidden'}}>
@@ -750,6 +751,7 @@ function RatingTable({ ratings }) {
 
 // ── Manager detail modal ─────────────────────────────────────────────────
 function ManagerModal({ manager, queueItems, onClose, onCreateTask }) {
+  const z = useModalZ();
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -775,7 +777,7 @@ function ManagerModal({ manager, queueItems, onClose, onCreateTask }) {
   return (
     <div style={{
       position:'fixed', inset:0, background:'rgba(0,0,0,.45)', backdropFilter:'blur(3px)',
-      zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:24
+      zIndex:z, display:'flex', alignItems:'center', justifyContent:'center', padding:24
     }} onClick={onClose}>
       <div style={{
         background:'var(--card)', borderRadius:14, boxShadow:'0 20px 60px rgba(0,0,0,.25)',

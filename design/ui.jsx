@@ -573,6 +573,19 @@ const Modal = ({ open, onClose, title, children, footer, size='md' }) => {
 // ── Tri-state column sort (rule 3) ─────────────────────────────────────────
 // Cycle on the same key: (current dir) → asc → desc → none → asc …
 // none = sortKey/sortDir both null → caller renders items in original order.
+// useModalZ — каждый mount модалки получает z-index выше всех предыдущих.
+// Глобальный счётчик в window.__modalZ. Closing не уменьшает его (новые
+// модалки всегда выше). Базовое значение 200 — выше дровера уведомлений
+// (z:120) и сайдбара (z:20).
+function useModalZ(base = 200) {
+  const [z] = useState(() => {
+    const next = (window.__modalZ || base) + 10;
+    window.__modalZ = next;
+    return next;
+  });
+  return z;
+}
+
 // Tri-state sort: 1st click → asc, 2nd → desc, 3rd → reset to initial.
 // Без initial — reset == unsorted (data's original order). С initial —
 // reset возвращает таблицу к стартовому отображению (например, score desc
@@ -636,6 +649,6 @@ Object.assign(window, {
   cn, Icon, Button, Badge, PriorityBadge, Card, CardHeader, CardTitle, CardContent,
   Tabs, Avatar, Progress, ScoreCell, PercentCell, Delta, Sparkline, Tooltip,
   Switch, Select, PeriodSelector, Pagination, EmptyState, Modal,
-  useTriStateSort, SortIndicator, applyTriStateSort, CallDirectionIcon,
+  useTriStateSort, SortIndicator, applyTriStateSort, CallDirectionIcon, useModalZ,
   formatAge,
 });

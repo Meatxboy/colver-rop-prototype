@@ -166,9 +166,8 @@ function App() {
   };
 
   // ── Modal visibility rules ─────────────────────────────────────────────
-  // When TaskCreateModal is open over CallModal — hide CallModal content
-  // (TaskCreateModal backdrop already covers it, but we remove scroll-lock conflict)
-  const callModalHidden = createTaskPrefill !== null && callModalId !== null;
+  // Стекинг модалок через useModalZ — каждая новая модалка получает
+  // z-index выше предыдущей, так что любую можно открыть поверх любой.
 
   // Routing
   let pageContent = null;
@@ -182,7 +181,7 @@ function App() {
     pageContent = <ProcessedPage data={data} onOpenCall={openCall}/>;
     breadcrumbs = [{ label:'Обработанные' }];
   } else if (route.page === 'tasks') {
-    pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention}/>;
+    pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention} onTaskClosed={(t) => showToast(`Задача «${t.title}» перенесена в «Выполнено»`)}/>;
     breadcrumbs = [{ label:'Задачи' }];
   } else if (route.page === 'manager' || route.page === 'settings' || route.page === 'analytics') {
     pageContent = <div className="content"><EmptyState
@@ -249,20 +248,12 @@ function App() {
         onOpenTask={openTaskDetail}
       />
 
-      {/* Call modal — z:300 по умолчанию, либо z:500 если открыт поверх
-          TaskDetailModal (z:400). Скрывается, если поверх него открывается
-          TaskCreateModal. */}
+      {/* Call modal — z-index динамический через useModalZ, поэтому
+          новый CallModal всегда поверх предыдущей модалки. */}
       {callModalId && (
-        <div style={{
-          ...(callModalHidden ? {visibility:'hidden',pointerEvents:'none'} : {}),
-          // Поднимаем над TaskDetailModal, если она открыта.
-          ...(taskDetailId ? {position:'relative', zIndex:500} : {}),
-        }}>
-          <CallModal callId={callModalId} data={data} tasks={tasks} onOpenTask={openTaskDetail}
-            onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}
-            zIndex={taskDetailId ? 500 : 300}
-            onResolveCall={(qid, comment)=>{ handleProcess(qid, 'done', comment); setCallModalId(null); }}/>
-        </div>
+        <CallModal callId={callModalId} data={data} tasks={tasks} onOpenTask={openTaskDetail}
+          onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}
+          onResolveCall={(qid, comment)=>{ handleProcess(qid, 'done', comment); setCallModalId(null); }}/>
       )}
 
       {/* Task create modal (z:400) — global, triggered from 3 places */}
@@ -276,15 +267,19 @@ function App() {
         />
       )}
 
-      {/* Task detail modal — global, opened from queue task indicator */}
+      {/* Task detail modal — global, opened from queue task indicator
+          и из уведомлений/CallModal. Принимает динамический z-index, чтобы
+          корректно стекаться поверх предыдущих модалок. */}
       {taskDetailObj && (
         <TaskDetailModal
           task={taskDetailObj}
           managers={data.managers}
           onClose={closeTaskDetail}
           onSave={handleUpdateTask}
-          onDelete={handleDeleteTask}
+          onDelete={() => { handleDeleteTask(taskDetailObj.id); }}
           onOpenCall={openCall}
+          onMention={handleMention}
+          onCloseTask={(t) => showToast(`Задача «${t.title}» перенесена в «Выполнено»`)}
         />
       )}
 

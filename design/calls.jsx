@@ -25,10 +25,13 @@ function AgGridReactLite({
     const gridOptions = {
       columnDefs,
       rowData,
-      rowHeight: 48,
+      // Фиксированная высота строки — сетка не «прыгает» при первом
+      // рендере под autoHeight. Высота подобрана под 2 строки текста с
+      // учётом padding ячейки. Длинный текст обрезается через line-clamp.
+      rowHeight: 64,
       headerHeight: 40,
       suppressCellFocus: true,
-      animateRows: true,
+      animateRows: false,
       pagination: true,
       paginationPageSize: initialPageSize,
       // We render a custom pager below the grid (matches dashboard style).
@@ -150,15 +153,16 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
     ? '<span style="color:#16A34A;font-weight:600">+</span>'
     : '<span style="color:#DC2626;font-weight:600">−</span>';
 
-  // Wrapping text cell — отображает полный текст с переносами,
-  // строка тянется по высоте через autoHeight (ниже на columnDef).
+  // Wrapping text cell — отображает текст с переносами и обрезает по 2-3
+  // строкам через line-clamp. Высота строки фиксирована (rowHeight: 64),
+  // поэтому таблица не «скачет» при первом рендере, а длинный текст
+  // мягко обрезается с многоточием.
   const textCellWrap = p => {
     const safe = String(p.value || '—').replace(/</g, '&lt;');
-    return `<div style="font-size:12px;color:#52525B;white-space:normal;line-height:1.45;padding:6px 0">${safe}</div>`;
+    return `<div style="font-size:12px;color:#52525B;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word" title="${safe.replace(/"/g,"'")}">${safe}</div>`;
   };
-  // Стиль для autoHeight-колонок: нужно whiteSpace:normal, без flex —
-  // AG Grid сам управляет высотой ячейки.
-  const wrapStyle = { whiteSpace: 'normal', lineHeight: '1.45', wordBreak: 'break-word' };
+  // Cell-стиль для wrap-колонок без autoHeight (height фиксирована).
+  const wrapStyle = { whiteSpace: 'normal', lineHeight: '1.4', display: 'flex', alignItems: 'center', padding: '6px 12px' };
 
   // Direction icon for AG Grid (rule 5). Outgoing = ↗, incoming = ↙. Red when not answered.
   const directionCell = p => {
@@ -185,14 +189,14 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
   const targetedCols = useMemo(() => [
     { field:'manager',       headerName:'Специалист',      width:160, cellRenderer: managerCell, pinned:'left', lockPinned:true },
     { field:'status',        headerName:'Результат',       width:140, cellRenderer: statusCell },
-    { field:'nextStep',      headerName:'Следующий шаг',   width:200, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
+    { field:'nextStep',      headerName:'Следующий шаг',   width:200, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
     { field:'score',         headerName:'Ср. оценка',      width:100, cellRenderer: scoreCell, cellStyle:{textAlign:'center'} },
-    { field:'objectionType', headerName:'Тип возражения',  width:180, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
+    { field:'objectionType', headerName:'Тип возражения',  width:180, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
     { field:'scriptOk',      headerName:'Скрипт',          width:80,  cellRenderer: boolCell, cellStyle:{textAlign:'center'}, sortable:false },
     { field:'promoOk',       headerName:'Акции',           width:72,  cellRenderer: boolCell, cellStyle:{textAlign:'center'}, sortable:false },
     { field:'datetime',      headerName:'Время',           width:170, cellRenderer: datetimeCell },
-    { field:'content',       headerName:'Содержание',      flex:1, minWidth:240, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
-    { field:'recommendation',headerName:'Рекомендации',   width:220, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
+    { field:'content',       headerName:'Содержание',      flex:1, minWidth:240, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
+    { field:'recommendation',headerName:'Рекомендации',   width:220, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
   ], []);
 
   // Колонки для Нецелевых (по ТЗ 6). Колонка «Содержание» теперь wrap+autoHeight.
@@ -202,7 +206,7 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
       cellRenderer: () => `<span class="badge bg-secondary" style="color:#71717A">Нецелевой</span>`
     },
     { field:'datetime', headerName:'Время',        width:180, cellRenderer: datetimeCell },
-    { field:'content',  headerName:'Содержание',   flex:1, minWidth:280, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
+    { field:'content',  headerName:'Содержание',   flex:1, minWidth:280, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
   ], []);
 
   const managerOptions = [{value:'all',label:'Все менеджеры'}, ...[...new Set(data.calls.map(r=>r.manager))].map(m => ({value:m,label:m}))];
