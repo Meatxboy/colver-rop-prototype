@@ -207,7 +207,7 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
       cellRenderer: () => `<span class="badge bg-secondary" style="color:#71717A">Нецелевой</span>`
     },
     { field:'datetime', headerName:'Время',        width:180, cellRenderer: datetimeCell },
-    { field:'content',  headerName:'Содержание',   width:520, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
+    { field:'content',  headerName:'Содержание',   width:780, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
   ], []);
 
   const managerOptions = [{value:'all',label:'Все менеджеры'}, ...[...new Set(data.calls.map(r=>r.manager))].map(m => ({value:m,label:m}))];
@@ -232,8 +232,9 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
           </div>
         </div>
         {/* На «Нецелевых» всего 4 колонки — ограничиваем ширину сетки,
-            чтобы справа не было большого пустого пространства. */}
-        <div style={{height:600, maxWidth: selectedTab === 'nontargeted' ? 1060 : 'none'}}>
+            чтобы справа не было большого пустого пространства, но
+            достаточно широкой, чтобы «Содержание» помещалось в 1 строку. */}
+        <div style={{height:600, maxWidth: selectedTab === 'nontargeted' ? 1320 : 'none'}}>
           {/* key={selectedTab} → пересоздаём сетку при переключении вкладок,
               но colStateRef хранит сохранённые ширины и они применяются
               как initialColumnState при mount. */}
