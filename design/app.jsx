@@ -104,26 +104,42 @@ function App() {
   };
 
   const handleProcess = (queueItemId, action, comment = null) => {
-    setData(d => ({
-      ...d,
-      queue: d.queue.filter(i => i.id !== queueItemId),
-      processed: [
-        {
-          id: 'P' + Date.now(),
-          callId: d.queue.find(i => i.id === queueItemId)?.callId,
-          problem: d.queue.find(i => i.id === queueItemId)?.problem,
-          manager: d.queue.find(i => i.id === queueItemId)?.manager,
-          action,
-          comment: comment || undefined,
-          rop: 'Алексей П.',
-          date: 'сейчас',
-          outcome: 'pending',
-        },
-        ...d.processed,
-      ]
-    }));
+    setData(d => {
+      // Look up the item in attention queue first, then in management queue.
+      const inAttention  = d.queue.find(i => i.id === queueItemId);
+      const inManagement = d.queueManagement?.find(i => i.id === queueItemId);
+      const src = inAttention || inManagement;
+
+      const next = { ...d };
+      if (inAttention)  next.queue           = d.queue.filter(i => i.id !== queueItemId);
+      if (inManagement) next.queueManagement = d.queueManagement.filter(i => i.id !== queueItemId);
+
+      // Only attention-queue actions go into the Processed list. Management
+      // decisions (approve/dismiss) are recorded server-side as AI-suggestion
+      // outcomes — for the MVP they just disappear from the queue.
+      if (inAttention && src) {
+        next.processed = [
+          {
+            id: 'P' + Date.now(),
+            callId:  src.callId,
+            problem: src.problem,
+            manager: src.manager,
+            action,
+            comment: comment || undefined,
+            rop: 'Алексей П.',
+            date: 'сейчас',
+            outcome: 'pending',
+          },
+          ...d.processed,
+        ];
+      }
+      return next;
+    });
+
     const baseMsg = action === 'feedback' ? 'Обратная связь отправлена менеджеру'
       : action === 'meeting' ? 'Разбор назначен на завтра 14:00'
+      : action === 'approve' ? 'Решение принято · AI-предложение учтено'
+      : action === 'dismiss' ? 'AI-предложение отклонено'
       : 'Кейс закрыт';
     showToast(comment ? `${baseMsg} · комментарий сохранён` : baseMsg);
   };
