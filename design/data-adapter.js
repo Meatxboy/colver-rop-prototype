@@ -29,14 +29,22 @@
 
   const noTarget = C.CALLS.filter(c => !c.isTargeted).length;
   const noAgreement = C.CALLS.filter(c => !c.nextStep || c.nextStep === 'нет' || c.nextStep === '—' || c.nextStep === 'Нет договорённости').length;
+  // Positive metrics (the inverse of the no-X counts) — KPI cards show these
+  // as percentages so the rising direction is unambiguously "good".
+  const withResult    = totalCalls ? Math.round((totalCalls - noTarget)    / totalCalls * 100) : 0;
+  const withAgreement = totalCalls ? Math.round((totalCalls - noAgreement) / totalCalls * 100) : 0;
 
   const kpis = {
     callsTotal: totalCalls, callsPlan: 200, callsDelta: 8, callsTrend: C.KPI_TREND.noTarget,
     queueCount: queueAll.length, queueDelta: 2,
     avgScore: avgScore, scoreDelta: 0.3, scoreTrend: C.KPI_TREND.score,
     conversion: conv, convDelta: 4, convTrend: C.KPI_TREND.conv,
+    // Legacy negative counts kept for non-dashboard consumers (manager modal etc.)
     noTarget: noTarget, noTargetDelta: -5,
     noAgreement: noAgreement, noAgreementDelta: -8,
+    // Positive percentages used by the dashboard KPI cards.
+    withResult: withResult, withResultDelta: 5,
+    withAgreement: withAgreement, withAgreementDelta: 8,
   };
 
   // Per-period KPI variants — baseline ('week') is the real aggregation above;
@@ -45,11 +53,11 @@
   const r1 = (n) => Math.round(n);
   const round1 = (n) => Math.round(n * 10) / 10;
   const periodVariants = {
-    day:     { mult: 0.18, scoreShift:  0.2, convShift:  6, callsPlan:  40, callsDelta:  4, queueDelta:  1, noTargetDelta:  -2, noAgreementDelta:  -1 },
-    week:    { mult: 1.00, scoreShift:  0.0, convShift:  0, callsPlan: 200, callsDelta:  8, queueDelta:  2, noTargetDelta:  -5, noAgreementDelta:  -8 },
-    month:   { mult: 4.30, scoreShift: -0.1, convShift: -3, callsPlan: 800, callsDelta: 11, queueDelta:  6, noTargetDelta:  -8, noAgreementDelta: -10 },
-    quarter: { mult: 13.0, scoreShift: -0.2, convShift: -5, callsPlan:2400, callsDelta:  9, queueDelta: 14, noTargetDelta: -12, noAgreementDelta: -14 },
-    year:    { mult: 52.0, scoreShift: -0.3, convShift: -7, callsPlan:9600, callsDelta: 18, queueDelta: 26, noTargetDelta: -20, noAgreementDelta: -25 },
+    day:     { mult: 0.18, scoreShift:  0.2, convShift:  6, callsPlan:  40, callsDelta:  4, queueDelta:  1, noTargetDelta:  -2, noAgreementDelta:  -1, withResultShift:  4, withAgreementShift:  3 },
+    week:    { mult: 1.00, scoreShift:  0.0, convShift:  0, callsPlan: 200, callsDelta:  8, queueDelta:  2, noTargetDelta:  -5, noAgreementDelta:  -8, withResultShift:  0, withAgreementShift:  0 },
+    month:   { mult: 4.30, scoreShift: -0.1, convShift: -3, callsPlan: 800, callsDelta: 11, queueDelta:  6, noTargetDelta:  -8, noAgreementDelta: -10, withResultShift: -2, withAgreementShift: -3 },
+    quarter: { mult: 13.0, scoreShift: -0.2, convShift: -5, callsPlan:2400, callsDelta:  9, queueDelta: 14, noTargetDelta: -12, noAgreementDelta: -14, withResultShift: -4, withAgreementShift: -5 },
+    year:    { mult: 52.0, scoreShift: -0.3, convShift: -7, callsPlan:9600, callsDelta: 18, queueDelta: 26, noTargetDelta: -20, noAgreementDelta: -25, withResultShift: -6, withAgreementShift: -8 },
   };
   const kpisByPeriod = {};
   for (const [kind, v] of Object.entries(periodVariants)) {
@@ -70,6 +78,10 @@
       noTargetDelta: v.noTargetDelta,
       noAgreement: r1(noAgreement * v.mult),
       noAgreementDelta: v.noAgreementDelta,
+      withResult:    Math.max(0, Math.min(100, withResult    + v.withResultShift)),
+      withResultDelta: 5 + v.withResultShift,
+      withAgreement: Math.max(0, Math.min(100, withAgreement + v.withAgreementShift)),
+      withAgreementDelta: 8 + v.withAgreementShift,
     };
   }
 

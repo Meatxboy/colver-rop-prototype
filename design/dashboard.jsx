@@ -69,11 +69,11 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
                 <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
               </div>
             </Card>
-            <Card className="kpi-card is-danger">
-              <div className="kpi-label">Звонки без целевого действия <Tooltip text="Количество звонков, в которых не зафиксировано целевое действие"/></div>
-              <div className="kpi-value-row"><div className="kpi-value">{kpis.noTarget}</div><span className="kpi-unit">звонков</span></div>
+            <Card className="kpi-card is-success">
+              <div className="kpi-label">Доля звонков с результатом <Tooltip text="Процент звонков, в которых зафиксировано целевое действие (продажа, заявка, согласие на встречу и т. п.)"/></div>
+              <div className="kpi-value-row"><div className="kpi-value">{kpis.withResult}%</div></div>
               <div className="kpi-meta">
-                <Delta value={kpis.noTargetDelta} invertColor suffix="%"/>
+                <Delta value={kpis.withResultDelta} suffix=" пп"/>
                 <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
               </div>
             </Card>
@@ -85,11 +85,11 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
                 <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
               </div>
             </Card>
-            <Card className="kpi-card">
-              <div className="kpi-label">Звонки без договорённостей <Tooltip text="Звонки, завершённые без фиксации следующего шага или договорённости"/></div>
-              <div className="kpi-value-row"><div className="kpi-value">{kpis.noAgreement}</div><span className="kpi-unit">звонков</span></div>
+            <Card className="kpi-card is-success">
+              <div className="kpi-label">Доля звонков с договорённостью <Tooltip text="Процент звонков, завершённых фиксацией следующего шага или договорённости (встреча, расчёт, обратный звонок и т. п.)"/></div>
+              <div className="kpi-value-row"><div className="kpi-value">{kpis.withAgreement}%</div></div>
               <div className="kpi-meta">
-                <Delta value={kpis.noAgreementDelta} invertColor suffix="%"/>
+                <Delta value={kpis.withAgreementDelta} suffix=" пп"/>
                 <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
               </div>
             </Card>

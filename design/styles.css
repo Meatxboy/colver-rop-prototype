@@ -418,9 +418,10 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .tooltip-pop {
   position: fixed;
   background: #18181B; color: #FAFAFA;
-  padding: 7px 10px; border-radius: var(--radius-sm);
-  font-size: 12px; line-height: 1.5;
-  width: max-content; max-width: 240px;
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  font-size: 12.5px; line-height: 1.55;
+  width: max-content; max-width: 320px;
+  white-space: normal;
   z-index: 9999;
   pointer-events: none;
   box-shadow: 0 8px 16px rgba(0,0,0,.15);
@@ -710,7 +711,16 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 
 .kpi-card { padding: 16px 18px; }
 /* KPI label/unit/delta are footnotes per spec (12px); KPI value stays large. */
-.kpi-label { font-size: var(--table-secondary-font-size); color: var(--muted-foreground); font-weight: 500; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.kpi-label {
+  font-size: var(--table-secondary-font-size);
+  color: var(--muted-foreground); font-weight: 500;
+  display: flex; align-items: flex-start; gap: 6px;
+  line-height: 1.4;
+  min-height: 1.4em;
+}
+/* Anchor the tooltip trigger to the first line so it doesn't sink to the bottom
+   when the label wraps. */
+.kpi-label .tooltip-host { flex-shrink: 0; align-self: flex-start; padding-top: 1px; }
 .kpi-value-row { display: flex; align-items: baseline; gap: 5px; margin-top: 8px; }
 .kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
 .kpi-unit { font-size: var(--table-secondary-font-size); color: var(--muted-foreground); }
