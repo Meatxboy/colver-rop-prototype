@@ -96,7 +96,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           </div>
 
           {/* Рейтинг сотрудников (4.5 ТЗ) */}
-          <RatingTable ratings={ratings} onOpen={onOpenManager}/>
+          <RatingTable ratings={ratings}/>
 
           {/* Аналитика по группе (4.7 ТЗ) */}
           <Card>
@@ -597,29 +597,78 @@ function scoreToColor(val, max) {
   return `hsl(${hue}, 72%, 38%)`;
 }
 
-// Single leaderboard card (score or conv)
-function RatingCard({ title, rows, valueKey, maxVal, suffix, onOpen }) {
+// Single leaderboard card (score or conv).
+// Rows are static — names are NOT clickable. Sorting is via the two header
+// columns (Менеджер / Балл|Конверсия). Body scrolls if there are >10 rows;
+// the header stays fixed above the scroll area.
+function RatingCard({ title, rows, valueKey, valueLabel, maxVal, suffix }) {
+  // Default sort: rating value descending (so rank #1 appears first).
+  const [sortKey, setSortKey] = useState('value');
+  const [sortDir, setSortDir] = useState('desc');
+  const onSort = (key) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'name' ? 'asc' : 'desc');
+    }
+  };
+
+  const sorted = useMemo(() => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      if (sortKey === 'name') {
+        return a.name.localeCompare(b.name, 'ru') * dir;
+      }
+      // value sort — push null values to the end regardless of direction.
+      const av = a[valueKey], bv = b[valueKey];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return (av - bv) * dir;
+    });
+  }, [rows, sortKey, sortDir, valueKey]);
+
+  // ~46px per row → 10 rows ≈ 460px before scroll kicks in.
+  const ROW_MAX = 10;
+  const ROW_PX  = 46;
+  const scrollMax = sorted.length > ROW_MAX ? ROW_MAX * ROW_PX : 'none';
+
   return (
-    <Card style={{flex:'1 1 0', minWidth:0}}>
+    <Card style={{flex:'1 1 0', minWidth:0, display:'flex', flexDirection:'column'}}>
       <CardHeader>
         <CardTitle style={{fontSize:14}}>{title}</CardTitle>
       </CardHeader>
-      <div style={{padding:'2px 0 8px'}}>
-        {rows.map(r => {
+      {/* Sortable column header — sits OUTSIDE the scroll container so it stays
+          pinned even when the list scrolls. */}
+      <div style={{display:'flex', alignItems:'center', gap:10, padding:'8px 16px',
+        borderBottom:'1px solid var(--border)', background:'#FAFAFA',
+        fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em',
+        color:'#52525B', userSelect:'none'}}>
+        <div style={{width:32, flexShrink:0}}/>
+        <div style={{flex:1, minWidth:0, cursor:'pointer'}} onClick={() => onSort('name')}>
+          Менеджер<SortIndicator active={sortKey==='name'} dir={sortDir}/>
+        </div>
+        <div style={{flexShrink:0, textAlign:'right', minWidth:64, cursor:'pointer'}} onClick={() => onSort('value')}>
+          {valueLabel}<SortIndicator active={sortKey==='value'} dir={sortDir}/>
+        </div>
+        <div style={{width:26, flexShrink:0}}/>
+      </div>
+      {/* Scroll body */}
+      <div style={{maxHeight: scrollMax, overflowY: scrollMax === 'none' ? 'visible' : 'auto', padding:'2px 0 8px'}}>
+        {sorted.map((r, i) => {
           const hasRank = r.rank != null;
           const val     = r[valueKey];
           const color   = scoreToColor(val, maxVal);
           const delta   = r.rankDelta;
+          const isLast  = i === sorted.length - 1;
           return (
             <div key={r.id}
-              onClick={() => hasRank && onOpen && onOpen(r.id)}
               style={{display:'flex', alignItems:'center', gap:10, padding:'8px 16px',
-                borderBottom:'1px solid var(--border)', cursor: hasRank ? 'pointer' : 'default',
-                transition:'background .1s'}}
-              onMouseEnter={e => { if(hasRank) e.currentTarget.style.background='var(--secondary)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background='transparent'; }}
+                borderBottom: isLast ? 'none' : '1px solid var(--border)'}}
             >
-              {/* Medal / rank */}
+              {/* Medal / rank — медаль/номер берётся из исходных данных и
+                  привязан к сотруднику, а не к текущей позиции в списке. */}
               <div style={{width:32, textAlign:'center', flexShrink:0}}>
                 {MEDALS[r.rank]
                   ? <span style={{fontSize:24, lineHeight:1}}>{MEDALS[r.rank]}</span>
@@ -632,21 +681,21 @@ function RatingCard({ title, rows, valueKey, maxVal, suffix, onOpen }) {
                 }
               </div>
 
-              {/* Name */}
+              {/* Name (без жирного начертания, не кликабельно) */}
               <div style={{flex:1, minWidth:0}}>
-                <div style={{fontWeight:600, fontSize:13, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{r.name}</div>
+                <div style={{fontWeight:500, fontSize:13, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{r.name}</div>
                 <div className="muted" style={{fontSize:12}}>{hasRank ? `${r.calls} зв.` : 'нет звонков'}</div>
               </div>
 
               {/* Value */}
-              <div style={{flexShrink:0, textAlign:'right', minWidth:48}}>
+              <div style={{flexShrink:0, textAlign:'right', minWidth:64}}>
                 {hasRank && val != null
                   ? <span style={{fontWeight:800, fontSize:19, fontVariantNumeric:'tabular-nums', color}}>{suffix === '%' ? val + '%' : val.toFixed(1)}</span>
                   : <span className="muted" style={{fontSize:13}}>—</span>
                 }
               </div>
 
-              {/* Delta */}
+              {/* Rank delta */}
               <div style={{width:26, flexShrink:0, textAlign:'right'}}>
                 {hasRank && delta != null && delta !== 0
                   ? <span style={{fontSize:12, fontWeight:700, display:'inline-flex', alignItems:'center', gap:1,
@@ -664,24 +713,24 @@ function RatingCard({ title, rows, valueKey, maxVal, suffix, onOpen }) {
   );
 }
 
-function RatingTable({ ratings, onOpen }) {
+function RatingTable({ ratings }) {
   return (
     <div style={{display:'flex', gap:16}}>
       <RatingCard
         title="Рейтинг · Средняя оценка звонка"
         rows={ratings.byScore}
         valueKey="score"
+        valueLabel="Балл"
         maxVal={5}
         suffix="score"
-        onOpen={onOpen}
       />
       <RatingCard
         title="Рейтинг · Конверсия в целевое действие"
         rows={ratings.byConv}
         valueKey="conv"
+        valueLabel="Конверсия"
         maxVal={100}
         suffix="%"
-        onOpen={onOpen}
       />
     </div>
   );
