@@ -253,6 +253,9 @@
     problem: p.problem,
     manager: p.employee,
     action: p.resolution === 'irrelevant' ? 'done' : 'feedback',
+    // Комментарий РОПа из исходных данных — отображается в колонке
+    // «Действие» на странице «Обработанные».
+    comment: p.comment || null,
     rop: 'Алексей П.',
     date: p.closedAt.slice(0,10),
     outcome: p.resolution === 'resolved' ? 'good' : 'pending',

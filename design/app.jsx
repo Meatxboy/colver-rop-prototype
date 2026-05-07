@@ -178,7 +178,7 @@ function App() {
     pageContent = <CallsPage data={data} onOpenCall={openCall} period={period} setPeriod={setPeriod}/>;
     breadcrumbs = [{ label:'Звонки' }];
   } else if (route.page === 'processed') {
-    pageContent = <ProcessedPage data={data} onOpenCall={openCall}/>;
+    pageContent = <ProcessedPage data={{ ...data, tasks }} onOpenCall={openCall}/>;
     breadcrumbs = [{ label:'Обработанные' }];
   } else if (route.page === 'tasks') {
     pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention} onTaskClosed={(t) => showToast(`Задача «${t.title}» перенесена в «Выполнено»`)}/>;

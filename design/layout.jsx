@@ -312,20 +312,13 @@ function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen }) {
   );
 }
 
-function Topbar({ title, breadcrumbs, onAiToggle, aiOpen, route }) {
+function Topbar({ title, breadcrumbs, onAiToggle, aiOpen, route, companyName = 'Colver' }) {
+  // В верхнем меню вместо названия страницы — название компании.
+  // (Активная страница уже подсвечена в Sidebar.)
   return (
     <header className="topbar">
       <div className="topbar-left">
-        {breadcrumbs ? (
-          <div className="crumbs">
-            {breadcrumbs.map((b, i) => (
-              <Fragment key={i}>
-                {i > 0 && <span className="crumb-sep"><Icon.chevRight size={11}/></span>}
-                {b.onClick ? <button className="crumb-link" onClick={b.onClick} style={{background:'none',border:0,color:'inherit',cursor:'pointer',padding:0,fontSize:'inherit'}}>{b.label}</button> : <span style={{color: i === breadcrumbs.length-1 ? 'var(--foreground)' : 'inherit', fontWeight: i === breadcrumbs.length-1 ? 600 : 400}}>{b.label}</span>}
-              </Fragment>
-            ))}
-          </div>
-        ) : <div className="page-title">{title}</div>}
+        <div className="page-title" title="Название компании">{companyName}</div>
       </div>
       <div className="topbar-right">
         {!aiOpen && (

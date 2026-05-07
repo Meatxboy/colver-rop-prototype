@@ -360,7 +360,29 @@ function formatTime(sec) {
 
 // ── Processed page ──────────────────────────────────────────────────────
 function ProcessedPage({ data, onOpenCall }) {
-  const items = data.processed;
+  const items = data.processed || [];
+  // Pagination state — futer like dashboard/calls.
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const paged = items.slice(page * pageSize, (page + 1) * pageSize);
+
+  // Текст в колонке «Действие»: комментарий РОПа → последний комментарий
+  // задачи по звонку (через data.tasks, если будет проброшен) → дефолт «Решено».
+  const tasksByCallId = (data.tasks || []).reduce((m, t) => {
+    const k = String(t.callId || '').replace(/^C-/, '');
+    if (k && (!m[k] || (Array.isArray(t.comments) && t.comments.length))) m[k] = t;
+    return m;
+  }, {});
+  const actionText = (p) => {
+    if (p.comment && p.comment.trim()) return p.comment.trim();
+    const t = tasksByCallId[String(p.callId || '').replace(/^C-/, '')];
+    if (t && Array.isArray(t.comments) && t.comments.length) {
+      return t.comments[t.comments.length - 1].text;
+    }
+    return 'Решено';
+  };
+
   return (
     <div className="content">
       <div className="row-between">
@@ -371,19 +393,16 @@ function ProcessedPage({ data, onOpenCall }) {
         <div className="row"><PeriodSelector value="month" onChange={()=>{}}/></div>
       </div>
       <Card>
-        <CardHeader>
-          <CardTitle>{items.length} обработанных кейсов</CardTitle>
-        </CardHeader>
         <table className="data-table">
           <thead><tr>
             <th style={{width:90}}>Дата</th>
-            <th>Проблема</th>
+            <th style={{width:'30%'}}>Проблема</th>
             <th style={{width:200}}>Менеджер</th>
-            <th style={{width:160}}>Действие</th>
+            <th>Действие</th>
             <th style={{width:90, textAlign:'center'}}>Итог</th>
           </tr></thead>
           <tbody>
-            {items.map(p => (
+            {paged.map(p => (
               <tr key={p.id} className="is-clickable" onClick={()=>onOpenCall(p.callId)}>
                 <td className="muted" style={{fontSize:12}}>{p.date}</td>
                 <td>
@@ -394,9 +413,9 @@ function ProcessedPage({ data, onOpenCall }) {
                   <span style={{fontWeight:500}}>{p.manager}</span>
                 </td>
                 <td>
-                  {p.action === 'feedback' && <Badge variant="primary"><Icon.send size={10}/> Обратная связь</Badge>}
-                  {p.action === 'meeting' && <Badge variant="warning"><Icon.calendar size={10}/> Разбор</Badge>}
-                  {p.action === 'done' && <Badge variant="success"><Icon.check size={10}/> Решено</Badge>}
+                  <span style={{fontSize:13, color:'var(--foreground)', lineHeight:1.45}}>
+                    {actionText(p)}
+                  </span>
                 </td>
                 <td className="tac">
                   {p.outcome === 'good' && <span className="score is-good">↑</span>}
@@ -407,6 +426,15 @@ function ProcessedPage({ data, onOpenCall }) {
             ))}
           </tbody>
         </table>
+        <QueuePager
+          total={items.length}
+          page={page}
+          pageSize={pageSize}
+          setPage={setPage}
+          setPageSize={(s) => { setPageSize(s); setPage(0); }}
+          totalPages={totalPages}
+          pageSizes={[10, 20, 50]}
+        />
       </Card>
     </div>
   );
