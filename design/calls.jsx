@@ -1,7 +1,24 @@
 // ── AG Grid wrapper (vanilla agGrid → React) ─────────────────────────────
-function AgGridReactLite({ rowData, columnDefs, onRowClicked, pageSize=20, pageSizeOptions=[10,20,50,100], height='100%' }) {
+// Wraps the vanilla AG Grid with a React lifecycle. Adds:
+//   • column-state callbacks (onColumnState / initialColumnState) so the
+//     parent can persist user-resized widths between tab switches.
+//   • a custom footer (QueuePager) that mimics the dashboard pager —
+//     AG Grid's native pagination panel is suppressed.
+function AgGridReactLite({
+  rowData, columnDefs, onRowClicked,
+  pageSize: initialPageSize = 20,
+  pageSizes = [10, 20, 50],
+  height = '100%',
+  onColumnState,
+  initialColumnState,
+}) {
   const containerRef = useRef(null);
   const apiRef = useRef(null);
+  // Stable refs so grid callbacks always see the latest props/handlers.
+  const onColumnStateRef = useRef(onColumnState);
+  useEffect(() => { onColumnStateRef.current = onColumnState; }, [onColumnState]);
+
+  const [pag, setPag] = useState({ page: 0, totalPages: 1, pageSize: initialPageSize });
 
   useEffect(() => {
     if (!containerRef.current || apiRef.current) return;
@@ -13,16 +30,39 @@ function AgGridReactLite({ rowData, columnDefs, onRowClicked, pageSize=20, pageS
       suppressCellFocus: true,
       animateRows: true,
       pagination: true,
-      paginationPageSize: pageSize,
-      paginationPageSizeSelector: pageSizeOptions,
+      paginationPageSize: initialPageSize,
+      // We render a custom pager below the grid (matches dashboard style).
+      suppressPaginationPanel: true,
       // sortingOrder includes null → 3rd click clears sort and returns to original order (rule 3).
       defaultColDef: { resizable: true, sortable: true, sortingOrder: ['asc', 'desc', null], unSortIcon: false },
       onRowClicked: (e) => {
         if (e.event && e.event.target.closest('button')) return;
         onRowClicked && onRowClicked(e);
       },
+      onColumnResized: (e) => {
+        // Save state ONLY for user-driven resizes (drag handle).
+        // AG Grid also fires this event with source='api'/'flex' during
+        // programmatic column-defs swaps — those would corrupt the saved
+        // state for the inactive tab, so we filter them out.
+        if (e.finished && e.source === 'uiColumnResized' && apiRef.current && onColumnStateRef.current) {
+          onColumnStateRef.current(apiRef.current.getColumnState());
+        }
+      },
+      onPaginationChanged: () => {
+        if (!apiRef.current) return;
+        setPag({
+          page: apiRef.current.paginationGetCurrentPage(),
+          totalPages: apiRef.current.paginationGetTotalPages(),
+          pageSize: apiRef.current.paginationGetPageSize ? apiRef.current.paginationGetPageSize() : initialPageSize,
+        });
+      },
     };
     apiRef.current = window.agGrid.createGrid(containerRef.current, gridOptions);
+    if (initialColumnState) {
+      // Defer one tick so AG Grid finishes initial column setup before we
+      // overlay user state.
+      setTimeout(() => apiRef.current && apiRef.current.applyColumnState({ state: initialColumnState, applyOrder: true }), 0);
+    }
     return () => { apiRef.current && apiRef.current.destroy(); apiRef.current = null; };
   }, []);
 
@@ -30,17 +70,42 @@ function AgGridReactLite({ rowData, columnDefs, onRowClicked, pageSize=20, pageS
     if (apiRef.current) apiRef.current.setGridOption('rowData', rowData);
   }, [rowData]);
 
+  // Note: the parent re-mounts this component on tab switch (via React key),
+  // so columnDefs effectively only changes once on initial mount. We still
+  // sync if columnDefs identity ever changes.
   useEffect(() => {
-    if (apiRef.current) apiRef.current.setGridOption('columnDefs', columnDefs);
+    if (!apiRef.current) return;
+    apiRef.current.setGridOption('columnDefs', columnDefs);
   }, [columnDefs]);
 
-  return <div ref={containerRef} className="ag-theme-quartz" style={{height, width:'100%'}}></div>;
+  const goPage    = (p) => apiRef.current && apiRef.current.paginationGoToPage(p);
+  const setSize   = (s) => apiRef.current && apiRef.current.setGridOption('paginationPageSize', s);
+
+  return (
+    <div style={{display:'flex', flexDirection:'column', height}}>
+      <div ref={containerRef} className="ag-theme-quartz" style={{flex:1, minHeight:0, width:'100%'}}/>
+      <QueuePager
+        total={rowData.length}
+        page={pag.page}
+        pageSize={pag.pageSize}
+        setPage={goPage}
+        setPageSize={setSize}
+        totalPages={pag.totalPages}
+        pageSizes={pageSizes}
+      />
+    </div>
+  );
 }
 
 // ── Calls page ───────────────────────────────────────────────────────────
 function CallsPage({ data, onOpenCall, period, setPeriod }) {
   const [selectedTab, setSelectedTab] = useState('targeted');
   const [filters, setFilters] = useState({ manager:'all' });
+
+  // Persisted column state per tab. Lives in a ref to avoid re-render storms
+  // when the user drags a column edge.
+  const colStateRef = useRef({ targeted: null, nontargeted: null });
+  const onColumnState = (state) => { colStateRef.current[selectedTab] = state; };
 
   const targetedRows = useMemo(() => {
     let rows = data.calls.filter(r => r.isTargeted);
@@ -85,10 +150,17 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
     ? '<span style="color:#16A34A;font-weight:600">+</span>'
     : '<span style="color:#DC2626;font-weight:600">−</span>';
 
-  const textCell = p => `<span style="font-size:12px;color:#52525B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:200px" title="${(p.value||'').replace(/"/g,"'")}">${p.value||'—'}</span>`;
+  // Wrapping text cell — отображает полный текст с переносами,
+  // строка тянется по высоте через autoHeight (ниже на columnDef).
+  const textCellWrap = p => {
+    const safe = String(p.value || '—').replace(/</g, '&lt;');
+    return `<div style="font-size:12px;color:#52525B;white-space:normal;line-height:1.45;padding:6px 0">${safe}</div>`;
+  };
+  // Стиль для autoHeight-колонок: нужно whiteSpace:normal, без flex —
+  // AG Grid сам управляет высотой ячейки.
+  const wrapStyle = { whiteSpace: 'normal', lineHeight: '1.45', wordBreak: 'break-word' };
 
   // Direction icon for AG Grid (rule 5). Outgoing = ↗, incoming = ↙. Red when not answered.
-  // SVG paths mirror the lucide arrow-up-right / arrow-down-left used by Icon.* in ui.jsx.
   const directionCell = p => {
     const dir = p.data?.direction === 'in' ? 'in' : 'out';
     const ok  = p.data?.answered !== false;
@@ -109,28 +181,28 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
     return `<span style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap">${icon}<span>${text}</span></span>`;
   };
 
-  // Колонки для Целевых (по ТЗ 6)
+  // Колонки для Целевых (по ТЗ 6). Текстовые колонки тянутся по высоте.
   const targetedCols = useMemo(() => [
     { field:'manager',       headerName:'Специалист',      width:160, cellRenderer: managerCell, pinned:'left', lockPinned:true },
     { field:'status',        headerName:'Результат',       width:140, cellRenderer: statusCell },
-    { field:'nextStep',      headerName:'Следующий шаг',   width:190, cellRenderer: textCell, sortable:false },
+    { field:'nextStep',      headerName:'Следующий шаг',   width:200, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
     { field:'score',         headerName:'Ср. оценка',      width:100, cellRenderer: scoreCell, cellStyle:{textAlign:'center'} },
-    { field:'objectionType', headerName:'Тип возражения',  width:170, cellRenderer: textCell, sortable:false },
+    { field:'objectionType', headerName:'Тип возражения',  width:180, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
     { field:'scriptOk',      headerName:'Скрипт',          width:80,  cellRenderer: boolCell, cellStyle:{textAlign:'center'}, sortable:false },
     { field:'promoOk',       headerName:'Акции',           width:72,  cellRenderer: boolCell, cellStyle:{textAlign:'center'}, sortable:false },
     { field:'datetime',      headerName:'Время',           width:170, cellRenderer: datetimeCell },
-    { field:'content',       headerName:'Содержание',      flex:1,    cellRenderer: textCell, sortable:false },
-    { field:'recommendation',headerName:'Рекомендации',   width:200, cellRenderer: textCell, sortable:false },
+    { field:'content',       headerName:'Содержание',      flex:1, minWidth:240, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
+    { field:'recommendation',headerName:'Рекомендации',   width:220, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
   ], []);
 
-  // Колонки для Нецелевых (по ТЗ 6)
+  // Колонки для Нецелевых (по ТЗ 6). Колонка «Содержание» теперь wrap+autoHeight.
   const nonTargetedCols = useMemo(() => [
     { field:'manager',  headerName:'Специалист',   width:160, cellRenderer: managerCell, pinned:'left', lockPinned:true },
     { field:'status',   headerName:'Результат',    width:130,
       cellRenderer: () => `<span class="badge bg-secondary" style="color:#71717A">Нецелевой</span>`
     },
     { field:'datetime', headerName:'Время',        width:180, cellRenderer: datetimeCell },
-    { field:'content',  headerName:'Содержание',   flex:1,   cellRenderer: textCell, sortable:false },
+    { field:'content',  headerName:'Содержание',   flex:1, minWidth:280, cellRenderer: textCellWrap, sortable:false, wrapText:true, autoHeight:true, cellStyle: wrapStyle },
   ], []);
 
   const managerOptions = [{value:'all',label:'Все менеджеры'}, ...[...new Set(data.calls.map(r=>r.manager))].map(m => ({value:m,label:m}))];
@@ -155,12 +227,18 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
           </div>
         </div>
         <div style={{height:600}}>
+          {/* key={selectedTab} → пересоздаём сетку при переключении вкладок,
+              но colStateRef хранит сохранённые ширины и они применяются
+              как initialColumnState при mount. */}
           <AgGridReactLite
             key={selectedTab}
             rowData={selectedTab === 'targeted' ? targetedRows : nonTargetedRows}
             columnDefs={selectedTab === 'targeted' ? targetedCols : nonTargetedCols}
             pageSize={20}
+            pageSizes={[10, 20, 50]}
             onRowClicked={(e)=>onOpenCall(e.data.id)}
+            onColumnState={onColumnState}
+            initialColumnState={colStateRef.current[selectedTab]}
           />
         </div>
       </Card>

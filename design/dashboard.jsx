@@ -223,7 +223,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
 const QFrag = ({ children }) => children;
 
 // ── Queue pagination footer ──────────────────────────────────────────────
-function QueuePager({ total, page, pageSize, setPage, setPageSize, totalPages }) {
+function QueuePager({ total, page, pageSize, setPage, setPageSize, totalPages, pageSizes = [5, 10, 15] }) {
   return (
     <div style={{
       display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8,
@@ -233,7 +233,7 @@ function QueuePager({ total, page, pageSize, setPage, setPageSize, totalPages })
       <span>Всего <strong style={{color:'var(--foreground)'}}>{total}</strong></span>
       <div style={{display:'flex', alignItems:'center', gap:5}}>
         <span>Показывать по:</span>
-        {[5, 10, 15].map(s => (
+        {pageSizes.map(s => (
           <button key={s} onClick={() => { setPageSize(s); setPage(0); }} style={{
             padding:'2px 9px', borderRadius:5, border:'1px solid',
             borderColor: pageSize === s ? 'var(--primary)' : 'var(--border)',
@@ -946,4 +946,4 @@ function ManagersTable({ rows, onOpen }) {
   );
 }
 
-Object.assign(window, { Dashboard, AttentionQueue, ManagementQueue, PracticesQueue, ManagersTable, ResolveModal, findOpenTask });
+Object.assign(window, { Dashboard, AttentionQueue, ManagementQueue, PracticesQueue, ManagersTable, ResolveModal, findOpenTask, QueuePager });
