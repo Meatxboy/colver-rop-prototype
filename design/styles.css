@@ -767,9 +767,18 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .queue-table th, .queue-table td { text-align: left; }
 .queue-table th { vertical-align: middle; }
 /* Active (clicked) row gets the same soft-blue fill as the expanded panel,
-   so the currently-open row is visually highlighted. */
-.data-table tr.queue-row.is-expanded > td { background: #EFF4FF; }
+   so the currently-open row visually merges with the panel below. */
+.data-table tr.queue-row.is-expanded > td,
+.data-table tbody tr.queue-row.is-expanded:nth-child(even) > td { background: #F0F5FF; }
 .data-table tr.queue-row.is-expanded:hover > td { background: #E1EAFE !important; }
+
+/* Wider gaps between Менеджер / Балл / Давность in attention queue. */
+.queue-table.attention-table th:nth-child(3),
+.queue-table.attention-table td:nth-child(3),
+.queue-table.attention-table th:nth-child(4),
+.queue-table.attention-table td:nth-child(4),
+.queue-table.attention-table th:nth-child(5),
+.queue-table.attention-table td:nth-child(5) { padding-left: 22px; padding-right: 22px; }
 
 /* Chevron-only row toggle (no "Открыть" text). */
 .row-toggle {
@@ -810,7 +819,7 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .queue-row .age-fresh { color: var(--danger-strong); font-weight: 600; }
 .queue-row .actions-cell { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .queue-expanded {
-  background: linear-gradient(180deg, #F5F8FF 0%, #FAFAFA 100%);
+  background: linear-gradient(180deg, #F0F5FF 0%, #FAFAFA 100%);
   padding: 14px 18px 16px 18px;
 }
 .recommendation-block {
@@ -922,7 +931,7 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .cd-score-big { font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -2px; }
 .cd-score-label { font-size: 12px; color: var(--muted-foreground); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-.cd-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.cd-grid { display: grid; grid-template-columns: minmax(0, 0.65fr) minmax(0, 1.35fr); gap: 14px; align-items: start; }
 
 .cd-section-title {
   font-size: 12px; font-weight: 700; text-transform: uppercase;
@@ -933,7 +942,9 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 /* Критерии */
 .cd-criterion { padding: 10px 0; border-bottom: 1px solid var(--border); }
 .cd-criterion:last-child { border-bottom: 0; padding-bottom: 0; }
-.cd-criterion-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.cd-criterion-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; }
+.cd-criterion.is-compact { padding: 8px 0; }
+.cd-criterion.is-compact .cd-criterion-head { margin-bottom: 0; }
 .cd-criterion-name { font-size: 13.5px; font-weight: 500; }
 .cd-criterion-score { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .cd-criterion-score.is-good { color: var(--success); }
@@ -1002,6 +1013,15 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .player-track { flex: 1; height: 4px; background: #fff; border-radius: 2px; position: relative; cursor: pointer; }
 .player-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--primary); border-radius: 2px; }
 .player-time { font-size: 12px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; min-width: 80px; text-align: right; }
+.player-speed {
+  height: 28px; min-width: 44px; padding: 0 10px;
+  border: 1px solid var(--border); background: #fff;
+  color: var(--foreground); font: inherit; font-size: 12px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-radius: 999px; cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.player-speed:hover { background: var(--secondary); border-color: var(--border-strong); }
 
 /* AI panel */
 .ai-panel { width: var(--aipanel-w); flex-shrink: 0; background: #fff; border-left: 1px solid var(--border); display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; z-index: 10; animation: slideUp .2s ease; }
