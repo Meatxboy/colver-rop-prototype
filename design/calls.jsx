@@ -199,14 +199,15 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
     { field:'recommendation',headerName:'Рекомендации',   width:220, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
   ], []);
 
-  // Колонки для Нецелевых (по ТЗ 6). Колонка «Содержание» теперь wrap+autoHeight.
+  // Колонки для Нецелевых: фиксированные ширины, чтобы таблица не была
+  // растянута на всю ширину контейнера (только 4 колонки).
   const nonTargetedCols = useMemo(() => [
-    { field:'manager',  headerName:'Специалист',   width:160, cellRenderer: managerCell, pinned:'left', lockPinned:true },
+    { field:'manager',  headerName:'Специалист',   width:200, cellRenderer: managerCell, pinned:'left', lockPinned:true },
     { field:'status',   headerName:'Результат',    width:130,
       cellRenderer: () => `<span class="badge bg-secondary" style="color:#71717A">Нецелевой</span>`
     },
     { field:'datetime', headerName:'Время',        width:180, cellRenderer: datetimeCell },
-    { field:'content',  headerName:'Содержание',   flex:1, minWidth:280, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
+    { field:'content',  headerName:'Содержание',   width:520, cellRenderer: textCellWrap, sortable:false, cellStyle: wrapStyle },
   ], []);
 
   const managerOptions = [{value:'all',label:'Все менеджеры'}, ...[...new Set(data.calls.map(r=>r.manager))].map(m => ({value:m,label:m}))];
@@ -230,7 +231,9 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
             <Select value={filters.manager} onChange={v=>setFilters({...filters,manager:v})} options={managerOptions}/>
           </div>
         </div>
-        <div style={{height:600}}>
+        {/* На «Нецелевых» всего 4 колонки — ограничиваем ширину сетки,
+            чтобы справа не было большого пустого пространства. */}
+        <div style={{height:600, maxWidth: selectedTab === 'nontargeted' ? 1060 : 'none'}}>
           {/* key={selectedTab} → пересоздаём сетку при переключении вкладок,
               но colStateRef хранит сохранённые ширины и они применяются
               как initialColumnState при mount. */}

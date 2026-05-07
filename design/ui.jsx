@@ -226,6 +226,26 @@ const MONTHS_SHORT = ['Янв','Фев','Мар','Апр','Май','Июн','И�
 const DAY_PRESETS = [7, 30, 90, 365];
 // Hardcoded "today" — stays in sync with the data baseline (data.js:77 — 21.04.2026).
 const PERIOD_TODAY = new Date(2026, 4, 6);
+// Стартовый год доступных периодов — нет данных раньше.
+const PERIOD_START_YEAR = 2026;
+// Все годы от старта до текущего (включительно). Будущие годы скрываем —
+// аналитика по ним невозможна.
+const availableYears = () => {
+  const out = [];
+  for (let y = PERIOD_START_YEAR; y <= PERIOD_TODAY.getFullYear(); y++) out.push(y);
+  return out;
+};
+// Доступные месяцы в указанном году (учёт будущих месяцев в текущем году).
+const availableMonths = (y) => {
+  const lim = y === PERIOD_TODAY.getFullYear() ? PERIOD_TODAY.getMonth() : 11;
+  return Array.from({ length: lim + 1 }, (_, i) => i);
+};
+// Доступные кварталы в году.
+const availableQuarters = (y) => {
+  const todayQ = Math.floor(PERIOD_TODAY.getMonth() / 3) + 1;
+  const lim = y === PERIOD_TODAY.getFullYear() ? todayQ : 4;
+  return Array.from({ length: lim }, (_, i) => i + 1);
+};
 
 const dowMonFirst = (d) => (d.getDay() + 6) % 7;
 const daysInMonth = (y, m0) => new Date(y, m0 + 1, 0).getDate();
@@ -402,27 +422,30 @@ function MonthBody({ state, onChange }) {
   const sel = state.kind === 'month' && state.year != null
     ? { y: state.year, m: state.monthIdx ?? PERIOD_TODAY.getMonth() }
     : { y: PERIOD_TODAY.getFullYear(), m: PERIOD_TODAY.getMonth() };
-  const years = [2026, 2027, 2028];
+  const years = availableYears();
   return <Fragment>
     <div className="period-subtabs">
       <button className={cn('period-subtab-btn', current && 'is-active')} onClick={() => onChange({ kind:'month', current:true, year:PERIOD_TODAY.getFullYear(), monthIdx:PERIOD_TODAY.getMonth() })}>Текущий</button>
       <button className={cn('period-subtab-btn', !current && 'is-active')} onClick={() => onChange({ kind:'month', current:false, year:sel.y, monthIdx:sel.m })}>Прошедший</button>
     </div>
     <div className="period-list">
-      {years.map(y => (
-        <div key={y} className="period-list-year">
-          <div className="period-year-label">{y}</div>
-          <div className="period-month-grid">
-            {MONTHS_SHORT.map((m, i) => (
-              <button key={m}
-                className={cn('period-cell', sel.y === y && sel.m === i && 'is-active')}
-                onClick={() => onChange({ kind:'month', current: y === PERIOD_TODAY.getFullYear() && i === PERIOD_TODAY.getMonth(), year:y, monthIdx:i })}>
-                {m}
-              </button>
-            ))}
+      {years.map(y => {
+        const months = availableMonths(y);
+        return (
+          <div key={y} className="period-list-year">
+            <div className="period-year-label">{y}</div>
+            <div className="period-month-grid">
+              {months.map(i => (
+                <button key={MONTHS_SHORT[i]}
+                  className={cn('period-cell', sel.y === y && sel.m === i && 'is-active')}
+                  onClick={() => onChange({ kind:'month', current: y === PERIOD_TODAY.getFullYear() && i === PERIOD_TODAY.getMonth(), year:y, monthIdx:i })}>
+                  {MONTHS_SHORT[i]}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   </Fragment>;
 }
@@ -433,27 +456,30 @@ function QuarterBody({ state, onChange }) {
   const sel = state.kind === 'quarter' && state.year != null
     ? { y: state.year, q: state.quarter || todayQ }
     : { y: PERIOD_TODAY.getFullYear(), q: todayQ };
-  const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034];
+  const years = availableYears();
   return <Fragment>
     <div className="period-subtabs">
       <button className={cn('period-subtab-btn', current && 'is-active')} onClick={() => onChange({ kind:'quarter', current:true, year:PERIOD_TODAY.getFullYear(), quarter:todayQ })}>Текущий</button>
       <button className={cn('period-subtab-btn', !current && 'is-active')} onClick={() => onChange({ kind:'quarter', current:false, year:sel.y, quarter:sel.q })}>Прошедший</button>
     </div>
     <div className="period-list">
-      {years.map(y => (
-        <div key={y} className="period-list-row">
-          <div className="period-year-label-inline">{y}</div>
-          <div className="period-quarter-row">
-            {[1,2,3,4].map(q => (
-              <button key={q}
-                className={cn('period-cell', sel.y === y && sel.q === q && 'is-active')}
-                onClick={() => onChange({ kind:'quarter', current: y === PERIOD_TODAY.getFullYear() && q === todayQ, year:y, quarter:q })}>
-                Q{q}
-              </button>
-            ))}
+      {years.map(y => {
+        const qs = availableQuarters(y);
+        return (
+          <div key={y} className="period-list-row">
+            <div className="period-year-label-inline">{y}</div>
+            <div className="period-quarter-row">
+              {qs.map(q => (
+                <button key={q}
+                  className={cn('period-cell', sel.y === y && sel.q === q && 'is-active')}
+                  onClick={() => onChange({ kind:'quarter', current: y === PERIOD_TODAY.getFullYear() && q === todayQ, year:y, quarter:q })}>
+                  Q{q}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   </Fragment>;
 }
@@ -461,7 +487,7 @@ function QuarterBody({ state, onChange }) {
 function YearBody({ state, onChange }) {
   const current = state.kind === 'year' ? state.current !== false : true;
   const sel = state.kind === 'year' && state.year != null ? state.year : PERIOD_TODAY.getFullYear();
-  const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034];
+  const years = availableYears();
   return <Fragment>
     <div className="period-subtabs">
       <button className={cn('period-subtab-btn', current && 'is-active')} onClick={() => onChange({ kind:'year', current:true, year:PERIOD_TODAY.getFullYear() })}>Текущий</button>

@@ -399,7 +399,6 @@ function ProcessedPage({ data, onOpenCall }) {
             <th style={{width:'30%'}}>Проблема</th>
             <th style={{width:200}}>Менеджер</th>
             <th>Действие</th>
-            <th style={{width:90, textAlign:'center'}}>Итог</th>
           </tr></thead>
           <tbody>
             {paged.map(p => (
@@ -416,11 +415,6 @@ function ProcessedPage({ data, onOpenCall }) {
                   <span style={{fontSize:13, color:'var(--foreground)', lineHeight:1.45}}>
                     {actionText(p)}
                   </span>
-                </td>
-                <td className="tac">
-                  {p.outcome === 'good' && <span className="score is-good">↑</span>}
-                  {p.outcome === 'pending' && <span className="muted">⋯</span>}
-                  {p.outcome === 'bad' && <span className="score is-bad">↓</span>}
                 </td>
               </tr>
             ))}

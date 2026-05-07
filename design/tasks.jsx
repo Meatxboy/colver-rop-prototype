@@ -370,12 +370,16 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
   return (
     <div
       style={{position:'fixed',inset:0,zIndex:z,background:'rgba(9,9,11,.50)',
-        backdropFilter:'blur(3px)',display:'flex',alignItems:'flex-start',
-        justifyContent:'center',padding:'40px 16px 24px',overflowY:'auto'}}
+        backdropFilter:'blur(3px)',display:'flex',alignItems:'center',
+        justifyContent:'center',padding:'24px 16px'}}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{background:'#fff',borderRadius:12,width:'100%',maxWidth:560,
+      {/* Окно ограничено высотой экрана; скроллится тело, шапка и футер
+          закреплены — кнопки удалить/отмена/закрыть задачу всегда видны. */}
+      <div style={{background:'#fff',borderRadius:12,width:'100%',maxWidth:760,
+        maxHeight:'calc(100vh - 48px)',
         boxShadow:'0 32px 80px rgba(0,0,0,.22)',overflow:'hidden',
+        display:'flex',flexDirection:'column',
         animation:'slideUp .18s ease'}}>
 
         {/* Header */}
@@ -396,8 +400,9 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
           </div>
         </div>
 
-        {/* Body */}
-        <div style={{padding:'18px 20px',display:'flex',flexDirection:'column',gap:14}}>
+        {/* Body — скроллится, шапка и футер закреплены. */}
+        <div style={{padding:'18px 20px',display:'flex',flexDirection:'column',gap:14,
+          flex:'1 1 auto',minHeight:0,overflowY:'auto'}}>
 
           {/* Title — большое поле */}
           <div>
@@ -502,10 +507,19 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
             </span>
           </div>
 
-          {/* Комментарии */}
+          {/* Комментарии — отдельная область со своим вертикальным скроллом.
+              По умолчанию показаны последние комментарии (auto-scroll вниз). */}
           <div>
             {fieldLabel(`Комментарии${comments.length ? ` · ${comments.length}` : ''}`)}
-            <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:10}}>
+            <div ref={el => {
+              // Один-разовая прокрутка вниз при mount/обновлении списка.
+              if (el) el.scrollTop = el.scrollHeight;
+            }}
+              style={{display:'flex', flexDirection:'column', gap:8, marginBottom:10,
+                maxHeight:240, overflowY:'auto', padding: comments.length ? 8 : 0,
+                background: comments.length ? '#FAFAFA' : 'transparent',
+                borderRadius: comments.length ? 8 : 0,
+                border: comments.length ? '1px solid var(--border)' : 0}}>
               {comments.length === 0 && (
                 <div style={{fontSize:12, color:'var(--muted-foreground)', fontStyle:'italic'}}>
                   Пока нет комментариев
