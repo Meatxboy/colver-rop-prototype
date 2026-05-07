@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Colver — Контроль качества (РОП) · v2</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +16,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-quartz.css">
 
-<link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./styles.css?v=20260507b">
 </head>
 <body>
 <div id="root"></div>
@@ -26,18 +29,18 @@
 <!-- AG Grid (vanilla) -->
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.noStyle.js"></script>
 
-<!-- App scripts -->
-<script type="text/babel" src="./ui.jsx"></script>
-<script type="text/babel" src="./layout.jsx"></script>
-<script type="text/babel" src="./data.js"></script>
-<script type="text/babel" src="./data-adapter.js"></script>
-<script type="text/babel" src="./dashboard.jsx"></script>
-<script type="text/babel" src="./calls.jsx"></script>
-<script type="text/babel" src="./tasks.jsx"></script>
-<script type="text/babel" src="./pages.jsx"></script>
-<script type="text/babel" src="./ai-panel.jsx"></script>
-<script type="text/babel" src="./tweaks.jsx"></script>
-<script type="text/babel" src="./cookie-banner.jsx"></script>
-<script type="text/babel" src="./app.jsx"></script>
+<!-- App scripts. Bump ?v= when shipping to invalidate caches (Babel/browser). -->
+<script type="text/babel" src="./ui.jsx?v=20260507b"></script>
+<script type="text/babel" src="./layout.jsx?v=20260507b"></script>
+<script type="text/babel" src="./data.js?v=20260507b"></script>
+<script type="text/babel" src="./data-adapter.js?v=20260507b"></script>
+<script type="text/babel" src="./dashboard.jsx?v=20260507b"></script>
+<script type="text/babel" src="./calls.jsx?v=20260507b"></script>
+<script type="text/babel" src="./tasks.jsx?v=20260507b"></script>
+<script type="text/babel" src="./pages.jsx?v=20260507b"></script>
+<script type="text/babel" src="./ai-panel.jsx?v=20260507b"></script>
+<script type="text/babel" src="./tweaks.jsx?v=20260507b"></script>
+<script type="text/babel" src="./cookie-banner.jsx?v=20260507b"></script>
+<script type="text/babel" src="./app.jsx?v=20260507b"></script>
 </body>
 </html>

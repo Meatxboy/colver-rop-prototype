@@ -465,7 +465,7 @@ function ManagementQueue({ items, onProcess }) {
           <tr>
             <th style={{width:54}} className="sortable" onClick={()=>onSort('priority')}>Приор.<SortIndicator active={sortKey==='priority'} dir={sortDir}/></th>
             <th>Тип · описание</th>
-            <th style={{width:220}} className="sortable" onClick={()=>onSort('employee')}>Затронутые<SortIndicator active={sortKey==='employee'} dir={sortDir}/></th>
+            <th style={{width:220}} className="sortable" onClick={()=>onSort('employee')}>Менеджер<SortIndicator active={sortKey==='employee'} dir={sortDir}/></th>
             <th style={{width:110}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
             <th style={{width:42}} aria-label=""></th>
           </tr>
@@ -501,10 +501,8 @@ function ManagementQueue({ items, onProcess }) {
                         <div className="recommendation-text">{item.recommendation}</div>
                       </div>
                       <div className="expanded-actions">
-                        <Button size="sm" variant="default" onClick={()=>onProcess(item.id, 'approve')}><Icon.check size={12}/> Принять решение</Button>
-                        <Button size="sm" variant="outline" onClick={()=>onProcess(item.id, 'delegate')}><Icon.calendar size={12}/> Делегировать</Button>
-                        <div style={{flex:1}}></div>
-                        <Button size="sm" variant="ghost" onClick={()=>onProcess(item.id, 'dismiss')}>Отклонить</Button>
+                        <Button size="lg" variant="default" onClick={()=>onProcess(item.id, 'approve')}><Icon.check size={14}/> Принять решение</Button>
+                        <Button size="lg" variant="outline" onClick={()=>onProcess(item.id, 'dismiss')}><Icon.x size={14}/> Отклонить</Button>
                       </div>
                     </div>
                   </td>
