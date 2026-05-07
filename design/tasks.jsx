@@ -212,7 +212,7 @@ function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenC
 }
 
 // ── TaskDetailModal ───────────────────────────────────────────────────────
-function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpenCall }) {
+function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpenCall, onMention }) {
   const [form, setForm] = useState({
     title:    task.title    || '',
     text:     task.text     || '',
@@ -222,14 +222,107 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
     dueDate:  task.dueDate  || '',
     callId:   task.callId   || '',
   });
+  const [comments, setComments] = useState(Array.isArray(task.comments) ? task.comments : []);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [mentionQuery, setMentionQuery] = useState(null); // null = popup closed
+  const commentRef = useRef(null);
   const [dirty, setDirty] = useState(false);
 
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setDirty(true); };
 
+  const persist = (extra = {}) => {
+    onSave({
+      ...task,
+      ...form,
+      manager: form.manager || null,
+      callId: form.callId || null,
+      dueDate: form.dueDate || null,
+      comments,
+      ...extra,
+    });
+  };
+
   const handleSave = () => {
     if (!form.title.trim()) return;
-    onSave({ ...task, ...form, manager: form.manager || null, callId: form.callId || null, dueDate: form.dueDate || null });
+    persist();
     onClose();
+  };
+
+  // ── Mentions in comment input ──────────────────────────────────────────
+  // Detect `@<query>` at the cursor; show a manager picker; on click, insert
+  // the manager name into the draft and remember the mention.
+  const [pendingMentions, setPendingMentions] = useState([]);
+  const onCommentChange = (e) => {
+    const v = e.target.value;
+    setCommentDraft(v);
+    const cursor = e.target.selectionStart || v.length;
+    const upToCursor = v.slice(0, cursor);
+    const at = upToCursor.lastIndexOf('@');
+    if (at < 0) { setMentionQuery(null); return; }
+    const after = upToCursor.slice(at + 1);
+    // Allow letters, digits, hyphen, dot, space — stop at newline.
+    if (/^[\wА-Яа-яЁё .\-]*$/.test(after) && !after.includes('\n')) {
+      setMentionQuery(after);
+    } else {
+      setMentionQuery(null);
+    }
+  };
+  const insertMention = (manager) => {
+    if (!commentRef.current) return;
+    const v = commentDraft;
+    const cursor = commentRef.current.selectionStart || v.length;
+    const upToCursor = v.slice(0, cursor);
+    const at = upToCursor.lastIndexOf('@');
+    if (at < 0) return;
+    // Use last name for compact display, but track full name for notification.
+    const lastName = (manager.name || '').split(' ')[0];
+    const next = v.slice(0, at) + '@' + lastName + ' ' + v.slice(cursor);
+    setCommentDraft(next);
+    setMentionQuery(null);
+    setPendingMentions(prev => prev.includes(manager.name) ? prev : [...prev, manager.name]);
+    // Restore focus + put cursor after inserted mention.
+    setTimeout(() => {
+      if (commentRef.current) {
+        const pos = at + lastName.length + 2;
+        commentRef.current.focus();
+        commentRef.current.setSelectionRange(pos, pos);
+      }
+    }, 0);
+  };
+  const matchedManagers = mentionQuery !== null
+    ? managers.filter(m => (m.name || '').toLowerCase().includes(mentionQuery.toLowerCase())).slice(0, 6)
+    : [];
+
+  const sendComment = () => {
+    const text = commentDraft.trim();
+    if (!text) return;
+    // Re-detect mentions present in the final text (covers user-typed @Name).
+    const finalMentions = pendingMentions.filter(name => text.toLowerCase().includes('@' + (name.split(' ')[0] || '').toLowerCase()));
+    const newComment = {
+      id: 'C-' + Date.now(),
+      author: 'Алексей П.', // РОП по умолчанию
+      text,
+      mentions: finalMentions,
+      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    };
+    const nextComments = [...comments, newComment];
+    setComments(nextComments);
+    setCommentDraft('');
+    setPendingMentions([]);
+    setMentionQuery(null);
+    // Persist into task immediately so comments survive close/reopen.
+    onSave({
+      ...task,
+      ...form,
+      manager: form.manager || null,
+      callId: form.callId || null,
+      dueDate: form.dueDate || null,
+      comments: nextComments,
+    });
+    // Notify mentioned managers.
+    if (finalMentions.length && onMention) {
+      finalMentions.forEach(name => onMention({ managerName: name, taskId: task.id, taskTitle: form.title.trim() || task.title, comment: text }));
+    }
   };
 
   const managerOpts = [
@@ -388,6 +481,93 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
               {prio.label}
             </span>
           </div>
+
+          {/* Комментарии */}
+          <div>
+            {fieldLabel(`Комментарии${comments.length ? ` · ${comments.length}` : ''}`)}
+            <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:10}}>
+              {comments.length === 0 && (
+                <div style={{fontSize:12, color:'var(--muted-foreground)', fontStyle:'italic'}}>
+                  Пока нет комментариев
+                </div>
+              )}
+              {comments.map(c => (
+                <div key={c.id} style={{background:'var(--muted)', borderRadius:8, padding:'8px 10px',
+                  border:'1px solid var(--border)'}}>
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4}}>
+                    <span style={{fontSize:12, fontWeight:600}}>{c.author}</span>
+                    <span style={{fontSize:11, color:'var(--muted-foreground)'}}>{c.createdAt}</span>
+                  </div>
+                  <div style={{fontSize:12.5, lineHeight:1.5, whiteSpace:'pre-wrap', wordBreak:'break-word'}}>
+                    {/* Подсветка @mentions */}
+                    {c.text.split(/(@\S+)/g).map((part, i) =>
+                      part.startsWith('@')
+                        ? <span key={i} style={{color:'var(--primary)', fontWeight:600}}>{part}</span>
+                        : <Fragment key={i}>{part}</Fragment>
+                    )}
+                  </div>
+                  {c.mentions && c.mentions.length > 0 && (
+                    <div style={{fontSize:11, color:'var(--muted-foreground)', marginTop:4}}>
+                      Упомянуты: {c.mentions.join(', ')}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{position:'relative'}}>
+              <textarea
+                ref={commentRef}
+                value={commentDraft}
+                onChange={onCommentChange}
+                placeholder="Добавьте комментарий... Используйте @ для упоминания сотрудника"
+                rows={2}
+                style={{...inputStyle, resize:'vertical', lineHeight:1.5, paddingRight:80}}
+                onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendComment(); }}
+              />
+              <button
+                type="button"
+                onClick={sendComment}
+                disabled={!commentDraft.trim()}
+                style={{position:'absolute', right:8, bottom:8,
+                  padding:'5px 10px', fontSize:12, fontWeight:600,
+                  border:'1px solid var(--primary)', background:'var(--primary)', color:'#fff',
+                  borderRadius:6, cursor: commentDraft.trim() ? 'pointer' : 'default',
+                  opacity: commentDraft.trim() ? 1 : 0.5}}
+                title="Отправить (Ctrl+Enter)"
+              >
+                Отправить
+              </button>
+              {/* Mention picker */}
+              {mentionQuery !== null && matchedManagers.length > 0 && (
+                <div style={{position:'absolute', left:0, bottom:'100%', marginBottom:4,
+                  background:'#fff', border:'1px solid var(--border)', borderRadius:8,
+                  boxShadow:'0 8px 24px rgba(0,0,0,.12)', zIndex:1, minWidth:240, maxWidth:'100%',
+                  overflow:'hidden'}}>
+                  <div style={{padding:'6px 10px', fontSize:11, color:'var(--muted-foreground)',
+                    background:'#FAFAFA', borderBottom:'1px solid var(--border)'}}>
+                    Упомянуть менеджера{mentionQuery ? ` · «${mentionQuery}»` : ''}
+                  </div>
+                  {matchedManagers.map(m => (
+                    <button
+                      key={m.id || m.name}
+                      type="button"
+                      onClick={() => insertMention(m)}
+                      style={{display:'block', width:'100%', textAlign:'left',
+                        padding:'7px 10px', background:'#fff', border:0, cursor:'pointer',
+                        fontSize:12.5, color:'var(--foreground)'}}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--secondary)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
+                    >
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{fontSize:11, color:'var(--muted-foreground)', marginTop:4}}>
+              Ctrl+Enter — отправить · @ — упомянуть
+            </div>
+          </div>
         </div>
 
         {/* Footer: Удалить слева, Отмена/Закрыть задачу справа */}
@@ -395,7 +575,7 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
           padding:'13px 20px',borderTop:'1px solid var(--border)',background:'#FAFAFA'}}>
           <Button
             variant="ghost" size="md"
-            onClick={() => { if (window.confirm('Удалить задачу?')) { onDelete(task.id); onClose(); } }}
+            onClick={() => onDelete && onDelete()}
             style={{color:'#B91C1C'}}
           >
             <Icon.trash size={13}/> Удалить
@@ -417,7 +597,7 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
 }
 
 // ── TaskCard ──────────────────────────────────────────────────────────────
-function TaskCard({ task, onDragStart, onDragEnd, onOpenCall, onDelete, onOpenDetail }) {
+function TaskCard({ task, onDragStart, onDragEnd, onDragOverCard, onDropOnCard, onOpenCall, onDelete, onOpenDetail, dropIndicator }) {
   const prio = TASK_PRIO[task.priority] || TASK_PRIO.low;
 
   const parts = (task.manager || '').split(' ').filter(Boolean);
@@ -451,69 +631,80 @@ function TaskCard({ task, onDragStart, onDragEnd, onOpenCall, onDelete, onOpenDe
   };
 
   return (
-    <div
-      draggable
-      onDragStart={e => { wasDrag.current = true; onDragStart(task.id); }}
-      onDragEnd={onDragEnd}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onClick={handleClick}
-      style={{background:'#fff',border:'1px solid var(--border)',borderRadius:8,
-        padding:'9px 10px',cursor:'pointer',userSelect:'none',
-        boxShadow:'0 1px 2px rgba(0,0,0,.05)',transition:'box-shadow .1s,border-color .1s'}}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow='0 3px 10px rgba(0,0,0,.10)'; e.currentTarget.style.borderColor='#C7D2FE'; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 2px rgba(0,0,0,.05)'; e.currentTarget.style.borderColor='var(--border)'; }}
-    >
-      {/* Priority + delete */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
-        <span style={{background:prio.bg,color:prio.color,borderRadius:4,
-          padding:'2px 6px',fontSize:11,fontWeight:600}}>{prio.label}</span>
-        <button
-          onClick={e => { e.stopPropagation(); onDelete(task.id); }}
-          style={{background:'none',border:'none',padding:2,cursor:'pointer',
-            color:'var(--muted-foreground)',display:'flex',alignItems:'center',
-            borderRadius:4,opacity:.5}}
-          title="Удалить"
-        ><Icon.x size={11}/></button>
-      </div>
-
-      {/* Description */}
-      <div style={{fontSize:12,fontWeight:500,lineHeight:1.45,color:'var(--foreground)',marginBottom:9}}>
-        {task.title}
-      </div>
-
-      {/* Footer: call + responsible + due */}
-      <div style={{display:'flex',alignItems:'center',gap:4,minWidth:0}}>
-        {task.callId && (
-          <button onClick={e => {e.stopPropagation(); onOpenCall && onOpenCall(task.callId);}}
-            style={{background:'none',border:'none',padding:0,cursor:'pointer',
-              color:'var(--primary)',display:'flex',alignItems:'center',flexShrink:0}}
-            title={`Звонок #${task.callId}`}>
-            <Icon.phone size={11}/>
-          </button>
-        )}
-        <div style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:4}}>
-          {task.manager
-            ? <><Avatar name={task.manager} size={16} style={{flexShrink:0}}/>
-                <span style={{fontSize:12,color:'var(--muted-foreground)',
-                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>
-                  {managerShort}</span></>
-            : <span style={{fontSize:12,color:'var(--muted-foreground)',fontStyle:'italic'}}>—</span>
-          }
+    <Fragment>
+      {/* Drop-индикатор сверху от карточки (вертикальный реордеринг). */}
+      {dropIndicator === 'before' && (
+        <div style={{height:2, background:'var(--primary)', borderRadius:1, margin:'0 2px'}}/>
+      )}
+      <div
+        draggable
+        onDragStart={e => { wasDrag.current = true; onDragStart(task.id); }}
+        onDragEnd={onDragEnd}
+        onDragOver={e => { e.preventDefault(); onDragOverCard && onDragOverCard(e, task); }}
+        onDrop={e => { e.stopPropagation(); onDropOnCard && onDropOnCard(task); }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onClick={handleClick}
+        style={{background:'#fff',border:'1px solid var(--border)',borderRadius:8,
+          padding:'9px 10px',cursor:'pointer',userSelect:'none',
+          boxShadow:'0 1px 2px rgba(0,0,0,.05)',transition:'box-shadow .1s,border-color .1s'}}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow='0 3px 10px rgba(0,0,0,.10)'; e.currentTarget.style.borderColor='#C7D2FE'; }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow='0 1px 2px rgba(0,0,0,.05)'; e.currentTarget.style.borderColor='var(--border)'; }}
+      >
+        {/* Priority + delete */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
+          <span style={{background:prio.bg,color:prio.color,borderRadius:4,
+            padding:'2px 6px',fontSize:11,fontWeight:600}}>{prio.label}</span>
+          <button
+            onClick={e => { e.stopPropagation(); onDelete(task); }}
+            style={{background:'none',border:'none',padding:2,cursor:'pointer',
+              color:'var(--muted-foreground)',display:'flex',alignItems:'center',
+              borderRadius:4,opacity:.5}}
+            title="Удалить"
+          ><Icon.x size={11}/></button>
         </div>
-        {dueFmt && (
-          <span style={{fontSize:11,fontWeight:isOverdue?600:400,flexShrink:0,
-            color:isOverdue?'#B91C1C':'#71717A',marginLeft:4}}>
-            {isOverdue?'⚠ ':''}{dueFmt}
-          </span>
-        )}
+
+        {/* Description */}
+        <div style={{fontSize:12,fontWeight:500,lineHeight:1.45,color:'var(--foreground)',marginBottom:9}}>
+          {task.title}
+        </div>
+
+        {/* Footer: call + responsible (без аватара) + due */}
+        <div style={{display:'flex',alignItems:'center',gap:4,minWidth:0}}>
+          {task.callId && (
+            <button onClick={e => {e.stopPropagation(); onOpenCall && onOpenCall(task.callId);}}
+              style={{background:'none',border:'none',padding:0,cursor:'pointer',
+                color:'var(--primary)',display:'flex',alignItems:'center',flexShrink:0}}
+              title={`Звонок #${task.callId}`}>
+              <Icon.phone size={11}/>
+            </button>
+          )}
+          <div style={{flex:1,minWidth:0}}>
+            {task.manager
+              ? <span style={{fontSize:12,color:'var(--muted-foreground)',fontWeight:500,
+                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'block'}}>
+                  {managerShort}
+                </span>
+              : <span style={{fontSize:12,color:'var(--muted-foreground)',fontStyle:'italic'}}>—</span>
+            }
+          </div>
+          {dueFmt && (
+            <span style={{fontSize:11,fontWeight:isOverdue?600:400,flexShrink:0,
+              color:isOverdue?'#B91C1C':'#71717A',marginLeft:4}}>
+              {isOverdue?'⚠ ':''}{dueFmt}
+            </span>
+          )}
+        </div>
       </div>
-    </div>
+      {dropIndicator === 'after' && (
+        <div style={{height:2, background:'var(--primary)', borderRadius:1, margin:'0 2px'}}/>
+      )}
+    </Fragment>
   );
 }
 
 // ── KanbanColumn ──────────────────────────────────────────────────────────
-function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOver, onDrop, isOver, onOpenCall, onDelete, onOpenDetail, onAddTask }) {
+function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOverCol, onDropOnCol, onDragOverCard, onDropOnCard, isOver, dropTargetCardId, dropPosition, onOpenCall, onDelete, onOpenDetail, onAddTask }) {
   return (
     <div style={{flex:'1 1 0',minWidth:160,display:'flex',flexDirection:'column',gap:7}}>
       {/* Header */}
@@ -526,8 +717,8 @@ function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOver, onDrop, 
 
       {/* Drop zone */}
       <div
-        onDragOver={e => { e.preventDefault(); onDragOver(col.key); }}
-        onDrop={() => onDrop(col.key)}
+        onDragOver={e => { e.preventDefault(); onDragOverCol(col.key); }}
+        onDrop={() => onDropOnCol(col.key)}
         style={{flex:1,borderRadius:8,padding:7,
           background:isOver?'#EFF6FF':'var(--secondary)',
           border:`2px dashed ${isOver?'var(--primary)':'transparent'}`,
@@ -537,6 +728,8 @@ function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOver, onDrop, 
         {tasks.map(task => (
           <TaskCard key={task.id} task={task}
             onDragStart={onDragStart} onDragEnd={onDragEnd}
+            onDragOverCard={onDragOverCard} onDropOnCard={onDropOnCard}
+            dropIndicator={dropTargetCardId === task.id ? dropPosition : null}
             onOpenCall={onOpenCall} onDelete={onDelete} onOpenDetail={onOpenDetail}/>
         ))}
         {tasks.length === 0 && (
@@ -562,12 +755,16 @@ function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOver, onDrop, 
 }
 
 // ── TasksPage ─────────────────────────────────────────────────────────────
-function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, data }) {
+function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, data }) {
   const [draggingId, setDraggingId]   = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
+  // Drop-target card для вертикального реордеринга внутри колонки.
+  const [dropTarget, setDropTarget]   = useState({ id: null, position: null });
   const [search, setSearch]           = useState('');
   const [filters, setFilters]         = useState({ manager:'all', priority:'all' });
   const [detailTaskId, setDetailTaskId] = useState(null);
+  // Подтверждение удаления.
+  const [confirmDelete, setConfirmDelete] = useState(null); // {id, title} | null
 
   const managerOpts = [
     { value:'all', label:'Все менеджеры' },
@@ -592,15 +789,61 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, data }) {
 
   const totalOpen = tasks.filter(t => t.status !== 'done' && t.status !== 'partial').length;
 
-  const handleDrop = colKey => {
+  // Drop в пустое место колонки — переносим в конец и меняем статус.
+  const handleDropOnCol = colKey => {
     if (!draggingId) return;
-    setTasks(ts => ts.map(t => t.id === draggingId ? { ...t, status: colKey } : t));
-    setDraggingId(null); setDragOverCol(null);
+    setTasks(ts => {
+      const moving = ts.find(t => t.id === draggingId);
+      if (!moving) return ts;
+      const others = ts.filter(t => t.id !== draggingId);
+      const updated = { ...moving, status: colKey };
+      // Append at the end of the new column → put after all tasks of that col.
+      const colTasks = others.filter(t => t.status === colKey);
+      const lastColTaskId = colTasks.length ? colTasks[colTasks.length-1].id : null;
+      if (!lastColTaskId) return [...others, updated];
+      const idx = others.findIndex(t => t.id === lastColTaskId);
+      return [...others.slice(0, idx+1), updated, ...others.slice(idx+1)];
+    });
+    setDraggingId(null); setDragOverCol(null); setDropTarget({id:null, position:null});
   };
 
-  const handleDragEnd = () => { setDraggingId(null); setDragOverCol(null); };
+  // Drop на конкретную карточку — определяем before/after по hovered position.
+  const handleDragOverCard = (e, targetTask) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height/2;
+    const position = e.clientY < midY ? 'before' : 'after';
+    if (dropTarget.id !== targetTask.id || dropTarget.position !== position) {
+      setDropTarget({ id: targetTask.id, position });
+    }
+  };
 
-  const handleDelete = id => setTasks(ts => ts.filter(t => t.id !== id));
+  const handleDropOnCard = targetTask => {
+    if (!draggingId || draggingId === targetTask.id) {
+      setDraggingId(null); setDragOverCol(null); setDropTarget({id:null, position:null});
+      return;
+    }
+    setTasks(ts => {
+      const moving = ts.find(t => t.id === draggingId);
+      if (!moving) return ts;
+      const others = ts.filter(t => t.id !== draggingId);
+      const updated = { ...moving, status: targetTask.status };
+      const targetIdx = others.findIndex(t => t.id === targetTask.id);
+      const insertAt = dropTarget.position === 'after' ? targetIdx + 1 : targetIdx;
+      return [...others.slice(0, insertAt), updated, ...others.slice(insertAt)];
+    });
+    setDraggingId(null); setDragOverCol(null); setDropTarget({id:null, position:null});
+  };
+
+  const handleDragEnd = () => { setDraggingId(null); setDragOverCol(null); setDropTarget({id:null, position:null}); };
+
+  // Trigger удаления из карточки или TaskDetailModal — открывает confirm.
+  const requestDelete = (task) => setConfirmDelete({ id: task.id, title: task.title });
+  const performDelete = () => {
+    if (!confirmDelete) return;
+    setTasks(ts => ts.filter(t => t.id !== confirmDelete.id));
+    setDetailTaskId(prev => prev === confirmDelete.id ? null : prev);
+    setConfirmDelete(null);
+  };
 
   const handleSaveDetail = updatedTask => {
     setTasks(ts => ts.map(t => t.id === updatedTask.id ? updatedTask : t));
@@ -635,10 +878,25 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, data }) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Найти задачу..."
-            style={{width:'100%',paddingLeft:30,paddingRight:10,paddingTop:7,paddingBottom:7,
+            style={{width:'100%',paddingLeft:30,paddingRight: search ? 30 : 10,paddingTop:7,paddingBottom:7,
               border:'1px solid var(--border)',borderRadius:6,fontSize:13,outline:'none',
               boxSizing:'border-box',background:'#fff',fontFamily:'inherit'}}
           />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              title="Очистить"
+              aria-label="Очистить поиск"
+              style={{position:'absolute', right:6, top:'50%', transform:'translateY(-50%)',
+                background:'none', border:0, padding:4, cursor:'pointer',
+                color:'var(--muted-foreground)', display:'inline-flex', alignItems:'center',
+                borderRadius:4}}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--foreground)'; e.currentTarget.style.background = 'var(--secondary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted-foreground)'; e.currentTarget.style.background = 'transparent'; }}
+            >
+              <Icon.x size={12}/>
+            </button>
+          )}
         </div>
         <Select value={filters.manager}  onChange={v => setFilters(f=>({...f,manager:v}))}  options={managerOpts}/>
         <Select value={filters.priority} onChange={v => setFilters(f=>({...f,priority:v}))} options={prioOpts}/>
@@ -650,10 +908,14 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, data }) {
           <KanbanColumn
             key={col.key} col={col} tasks={byCol[col.key]}
             onDragStart={setDraggingId} onDragEnd={handleDragEnd}
-            onDragOver={setDragOverCol}
-            onDrop={handleDrop}
+            onDragOverCol={setDragOverCol}
+            onDropOnCol={handleDropOnCol}
+            onDragOverCard={handleDragOverCard}
+            onDropOnCard={handleDropOnCard}
             isOver={dragOverCol === col.key && draggingId !== null}
-            onOpenCall={onOpenCall} onDelete={handleDelete}
+            dropTargetCardId={dropTarget.id}
+            dropPosition={dropTarget.position}
+            onOpenCall={onOpenCall} onDelete={requestDelete}
             onOpenDetail={setDetailTaskId}
             onAddTask={onCreateTask}
           />
@@ -667,12 +929,56 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, data }) {
           managers={data.managers || []}
           onClose={() => setDetailTaskId(null)}
           onSave={handleSaveDetail}
-          onDelete={handleDelete}
+          onDelete={() => requestDelete(detailTask)}
           onOpenCall={onOpenCall}
+          onMention={onMention}
+        />
+      )}
+
+      {/* Confirm delete modal */}
+      {confirmDelete && (
+        <ConfirmDeleteTaskModal
+          title={confirmDelete.title}
+          onConfirm={performDelete}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>
   );
 }
 
-Object.assign(window, { TasksPage, TaskCreateModal, TaskDetailModal, initTasks });
+// ── ConfirmDeleteTaskModal ────────────────────────────────────────────────
+function ConfirmDeleteTaskModal({ title, onConfirm, onCancel }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+  return (
+    <div
+      style={{position:'fixed',inset:0,zIndex:500,background:'rgba(9,9,11,.5)',
+        backdropFilter:'blur(2px)',display:'flex',alignItems:'center',
+        justifyContent:'center',padding:'24px 16px'}}
+      onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div style={{background:'#fff',borderRadius:12,width:'100%',maxWidth:420,
+        boxShadow:'0 24px 64px rgba(0,0,0,.22)',overflow:'hidden'}}>
+        <div style={{padding:'18px 20px 14px'}}>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Удалить задачу?</div>
+          <div style={{fontSize:13,color:'var(--muted-foreground)',lineHeight:1.5}}>
+            Вы уверены, что хотите удалить задачу <strong style={{color:'var(--foreground)'}}>«{title}»</strong>?
+            Это действие нельзя отменить.
+          </div>
+        </div>
+        <div style={{display:'flex',gap:8,justifyContent:'flex-end',
+          padding:'12px 20px',borderTop:'1px solid var(--border)',background:'#FAFAFA'}}>
+          <Button variant="outline" size="md" onClick={onCancel}>Отмена</Button>
+          <Button variant="destructive" size="md" onClick={onConfirm}>
+            <Icon.trash size={13}/> Удалить
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { TasksPage, TaskCreateModal, TaskDetailModal, ConfirmDeleteTaskModal, initTasks });

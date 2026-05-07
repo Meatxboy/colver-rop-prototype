@@ -130,7 +130,7 @@ function CallDetail({ call, data, onBack, onOpenManager }) {
 // ── Call Modal (открывает карточку звонка поверх текущей страницы) ────────
 const PLAYBACK_SPEEDS = [1, 1.25, 1.5, 2, 0.75];
 
-function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask, onResolveCall }) {
+function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask, onResolveCall, zIndex = 300 }) {
   const baseCall = data.calls.find(c => c.id === callId) || data.calls[0];
   const detail   = data.callDetails[callId] || data.callDetails[data.calls[0]?.id] || {};
   const call     = { ...baseCall, ...detail };
@@ -164,7 +164,7 @@ function CallModal({ callId, data, tasks, onOpenTask, onClose, onCreateTask, onR
 
   return (
     <div
-      style={{position:'fixed',inset:0,zIndex:300,display:'flex',alignItems:'flex-start',justifyContent:'center',
+      style={{position:'fixed',inset:0,zIndex,display:'flex',alignItems:'flex-start',justifyContent:'center',
         background:'rgba(9,9,11,.45)',backdropFilter:'blur(2px)',overflowY:'auto',padding:'32px 16px'}}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >

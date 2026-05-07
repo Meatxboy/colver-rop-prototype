@@ -59,7 +59,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
 
           <div className="kpi-grid">
             <Card className="kpi-card">
-              <div className="kpi-label">Средняя оценка звонка <Tooltip text="Среднее от всех составляющих оценки звонка по критериям AI"/></div>
+              <div className="kpi-label">Средняя оценка звонка <Tooltip text="Среднее от всех оценок звонков за выбранный период"/></div>
               <div className="kpi-value-row">
                 <div className={cn('kpi-value', kpis.avgScore >= 4 ? 'is-good' : kpis.avgScore >= 3 ? 'is-warn' : 'is-bad')}>{kpis.avgScore.toFixed(1)}</div>
                 <span className="kpi-unit">/ 5</span>
@@ -603,15 +603,27 @@ function scoreToColor(val, max) {
 // the header stays fixed above the scroll area.
 function RatingCard({ title, rows, valueKey, valueLabel, maxVal, suffix }) {
   // Default sort: rating value descending (so rank #1 appears first).
-  const [sortKey, setSortKey] = useState('value');
-  const [sortDir, setSortDir] = useState('desc');
+  // Tri-state by column: 1st click → primary direction, 2nd → opposite,
+  // 3rd → reset to default (value desc, rank #1 first).
+  const DEFAULT_KEY = 'value', DEFAULT_DIR = 'desc';
+  const [sortKey, setSortKey] = useState(DEFAULT_KEY);
+  const [sortDir, setSortDir] = useState(DEFAULT_DIR);
   const onSort = (key) => {
-    if (sortKey === key) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    } else {
+    const primary = key === 'name' ? 'asc' : 'desc';
+    if (sortKey !== key) {
+      // First click on this column — start with its primary direction.
       setSortKey(key);
-      setSortDir(key === 'name' ? 'asc' : 'desc');
+      setSortDir(primary);
+      return;
     }
+    if (sortDir === primary) {
+      // Second click — flip direction.
+      setSortDir(primary === 'asc' ? 'desc' : 'asc');
+      return;
+    }
+    // Third click — reset to default sort.
+    setSortKey(DEFAULT_KEY);
+    setSortDir(DEFAULT_DIR);
   };
 
   const sorted = useMemo(() => {
@@ -834,7 +846,6 @@ function ManagerModal({ manager, queueItems, onClose, onCreateTask }) {
         {/* Footer */}
         <div style={{display:'flex', gap:10, padding:'16px 24px', borderTop:'1px solid var(--border)', marginTop:8}}>
           <Button variant="default" size="md" onClick={() => onCreateTask && onCreateTask({ manager: manager.name, priority:'medium' })}><Icon.calendar size={13}/> Поставить задачу</Button>
-          <Button variant="outline" size="md">Написать в чат</Button>
         </div>
       </div>
     </div>
@@ -878,18 +889,21 @@ function ManagersTable({ rows, onOpen }) {
         <table className="data-table" style={{minWidth:780}}>
           <thead>
             <tr>
-              {/* Sticky first column */}
+              {/* Sticky first column. Ширина рассчитана под полное ФИО
+                  «Зарубашвилли Вахтанг Владимирович» + paddings. */}
               <th onClick={()=>onSort('name')} className="sortable"
-                style={{position:'sticky', left:0, background:'var(--card)', zIndex:2, minWidth:130, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
+                style={{position:'sticky', left:0, background:'var(--card)', zIndex:2, minWidth:260, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
                 Специалист<SI k="name"/>
               </th>
-              <th onClick={()=>onSort('calls')} className="sortable tar" style={{minWidth:80}}>Звонков<SI k="calls"/></th>
-              <th onClick={()=>onSort('success')} className="sortable tar" style={{minWidth:80}}>Успешные<SI k="success"/></th>
-              <th onClick={()=>onSort('conversion')} className="sortable tar" style={{minWidth:130}}>CR в целевое действие<SI k="conversion"/></th>
-              <th onClick={()=>onSort('score')} className="sortable tar" style={{minWidth:100}}>Ср. оценка<SI k="score"/></th>
-              <th onClick={()=>onSort('objIdent')} className="sortable tar" style={{minWidth:110}}>Возр. выявлено<SI k="objIdent"/></th>
-              <th onClick={()=>onSort('objHandled')} className="sortable tar" style={{minWidth:120}}>Возр. отработано<SI k="objHandled"/></th>
-              <th onClick={()=>onSort('scriptCompliance')} className="sortable tar" style={{minWidth:80}}>Скрипт<SI k="scriptCompliance"/></th>
+              {/* Числовые колонки — единая ширина 130 для одинакового
+                  визуального ритма. */}
+              <th onClick={()=>onSort('calls')} className="sortable tar" style={{minWidth:130, width:130}}>Звонков<SI k="calls"/></th>
+              <th onClick={()=>onSort('success')} className="sortable tar" style={{minWidth:130, width:130}}>Успешные<SI k="success"/></th>
+              <th onClick={()=>onSort('conversion')} className="sortable tar" style={{minWidth:160, width:160}}>CR в целевое действие<SI k="conversion"/></th>
+              <th onClick={()=>onSort('score')} className="sortable tar" style={{minWidth:130, width:130}}>Ср. оценка<SI k="score"/></th>
+              <th onClick={()=>onSort('objIdent')} className="sortable tar" style={{minWidth:130, width:130}}>Возр. выявлено<SI k="objIdent"/></th>
+              <th onClick={()=>onSort('objHandled')} className="sortable tar" style={{minWidth:160, width:160}}>Возр. отработано<SI k="objHandled"/></th>
+              <th onClick={()=>onSort('scriptCompliance')} className="sortable tar" style={{minWidth:130, width:130}}>Скрипт<SI k="scriptCompliance"/></th>
             </tr>
           </thead>
           <tbody>

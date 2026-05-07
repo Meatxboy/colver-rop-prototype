@@ -55,7 +55,7 @@ function initNotifications() {
 }
 
 // ── NotificationsDrawer ───────────────────────────────────────────────────
-function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMarkRead, onOpenCall }) {
+function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMarkRead, onOpenCall, onOpenTask }) {
   const unread = notifications.filter(n => !n.read).length;
 
   if (!open) return null;
@@ -177,8 +177,8 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
                     {n.body}
                   </div>
 
-                  {/* Manager + call link */}
-                  {(n.manager || n.callId) && (
+                  {/* Manager + call/task link */}
+                  {(n.manager || n.callId || n.taskId) && (
                     <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5}}>
                       {n.manager && (
                         <div style={{display:'flex',alignItems:'center',gap:5}}>
@@ -197,6 +197,17 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
                             marginLeft:'auto'}}
                         >
                           <Icon.phone size={10}/> Звонок #{n.callId}
+                        </button>
+                      )}
+                      {n.taskId && !n.callId && (
+                        <button
+                          onClick={e => { e.stopPropagation(); onMarkRead(n.id); onOpenTask && onOpenTask(n.taskId); onClose && onClose(); }}
+                          style={{background:'none',border:'1px solid var(--border)',cursor:'pointer',
+                            padding:'3px 9px',borderRadius:5,fontSize:12,fontWeight:500,
+                            color:'var(--primary)',display:'flex',alignItems:'center',gap:5,
+                            marginLeft:'auto'}}
+                        >
+                          <Icon.calendar size={10}/> Задача #{n.taskId}
                         </button>
                       )}
                     </div>

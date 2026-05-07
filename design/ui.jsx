@@ -572,14 +572,18 @@ const Modal = ({ open, onClose, title, children, footer, size='md' }) => {
 // ── Tri-state column sort (rule 3) ─────────────────────────────────────────
 // Cycle on the same key: (current dir) → asc → desc → none → asc …
 // none = sortKey/sortDir both null → caller renders items in original order.
+// Tri-state sort: 1st click → asc, 2nd → desc, 3rd → reset to initial.
+// Без initial — reset == unsorted (data's original order). С initial —
+// reset возвращает таблицу к стартовому отображению (например, score desc
+// для «Аналитика по группе»).
 function useTriStateSort(initialKey = null, initialDir = null) {
   const [sortKey, setSortKey] = useState(initialKey);
   const [sortDir, setSortDir] = useState(initialDir);
   const sortBy = (k) => {
     if (sortKey !== k) { setSortKey(k); setSortDir('asc'); return; }
     if (sortDir === 'asc')  { setSortDir('desc'); return; }
-    if (sortDir === 'desc') { setSortKey(null); setSortDir(null); return; }
-    setSortDir('asc');
+    // 3-й клик — откат к исходному состоянию.
+    setSortKey(initialKey); setSortDir(initialDir);
   };
   return { sortKey, sortDir, sortBy };
 }

@@ -9,6 +9,11 @@ const EMPLOYEES = [
   { id: 5, name: 'Пирожкова Анна Игоревна',            short: 'Пирожкова А. И.',          calls: 51, success: 39, conv: 76, score: 4.4, objIdent: 47, objHandled: 64, scriptCompliance: 79, delta: +2, trend: [3.8,4.0,4.1,4.2,4.3,4.4] },
   { id: 6, name: 'Христорождественский Владислав',     short: 'Христорождественский В.',  calls: 39, success: 22, conv: 56, score: 3.5, objIdent: 35, objHandled: 53, scriptCompliance: 58, delta: -1, trend: [3.7,3.7,3.6,3.5,3.5,3.5] },
   { id: 7, name: 'Иванов Иван Иванович',               short: 'Иванов И. И.',             calls: 0,  success: 0,  conv: null, score: null, objIdent: 0, objHandled: 0, scriptCompliance: 0, delta: null, trend: [] },
+  { id: 8, name: 'Свиридова Мария Александровна',      short: 'Свиридова М. А.',          calls: 47, success: 32, conv: 68, score: 4.2, objIdent: 44, objHandled: 59, scriptCompliance: 75, delta: +1, trend: [3.9,4.0,4.0,4.1,4.2,4.2] },
+  { id: 9, name: 'Кравченко Олег Дмитриевич',           short: 'Кравченко О. Д.',          calls: 53, success: 28, conv: 53, score: 3.8, objIdent: 42, objHandled: 47, scriptCompliance: 62, delta: -1, trend: [4.0,3.9,3.9,3.8,3.8,3.8] },
+  { id:10, name: 'Лебедева Татьяна Сергеевна',          short: 'Лебедева Т. С.',           calls: 44, success: 36, conv: 82, score: 4.6, objIdent: 46, objHandled: 71, scriptCompliance: 84, delta: +2, trend: [4.0,4.2,4.3,4.4,4.5,4.6] },
+  { id:11, name: 'Меркулов Артём Викторович',           short: 'Меркулов А. В.',           calls: 36, success: 17, conv: 47, score: 3.4, objIdent: 31, objHandled: 38, scriptCompliance: 55, delta: -2, trend: [3.7,3.6,3.5,3.5,3.4,3.4] },
+  { id:12, name: 'Никитин Павел Юрьевич',               short: 'Никитин П. Ю.',            calls: 49, success: 41, conv: 84, score: 4.7, objIdent: 48, objHandled: 75, scriptCompliance: 86, delta: +1, trend: [4.3,4.4,4.5,4.6,4.7,4.7] },
 ];
 
 const QUEUE_URGENT = [

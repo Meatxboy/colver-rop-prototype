@@ -38,6 +38,24 @@ function App() {
   const markAllRead = () => setNotifications(ns => ns.map(n => ({ ...n, read: true })));
   const markRead = id => setNotifications(ns => ns.map(n => n.id === id ? { ...n, read: true } : n));
 
+  // ── @mention handler: упоминание сотрудника в комментарии задачи ───────
+  // Создаёт push-уведомление с taskId — клик на нём открывает деталь задачи.
+  const handleMention = ({ managerName, taskId, taskTitle, comment }) => {
+    const id = 'NF-MEN-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+    const snippet = comment.length > 80 ? comment.slice(0, 80) + '…' : comment;
+    setNotifications(ns => [
+      {
+        id, priority: 1, read: false,
+        callId: null, manager: managerName, taskId,
+        title: 'Вас упомянули в задаче',
+        body: `«${taskTitle}» · ${snippet}`,
+        time: 'только что',
+      },
+      ...ns,
+    ]);
+    showToast(`Уведомление отправлено: ${managerName}`);
+  };
+
   // Auto-close notifications drawer when any modal opens
   useEffect(() => {
     if (callModalId !== null) setNotifOpen(false);
@@ -164,7 +182,7 @@ function App() {
     pageContent = <ProcessedPage data={data} onOpenCall={openCall}/>;
     breadcrumbs = [{ label:'Обработанные' }];
   } else if (route.page === 'tasks') {
-    pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onOpenCall={openCall} onCreateTask={openCreateTask}/>;
+    pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention}/>;
     breadcrumbs = [{ label:'Задачи' }];
   } else if (route.page === 'manager' || route.page === 'settings' || route.page === 'analytics') {
     pageContent = <div className="content"><EmptyState
@@ -228,13 +246,21 @@ function App() {
         onMarkAllRead={markAllRead}
         onMarkRead={markRead}
         onOpenCall={openCall}
+        onOpenTask={openTaskDetail}
       />
 
-      {/* Call modal (z:300) — hidden when TaskCreateModal is on top */}
+      {/* Call modal — z:300 по умолчанию, либо z:500 если открыт поверх
+          TaskDetailModal (z:400). Скрывается, если поверх него открывается
+          TaskCreateModal. */}
       {callModalId && (
-        <div style={callModalHidden ? {visibility:'hidden',pointerEvents:'none'} : {}}>
+        <div style={{
+          ...(callModalHidden ? {visibility:'hidden',pointerEvents:'none'} : {}),
+          // Поднимаем над TaskDetailModal, если она открыта.
+          ...(taskDetailId ? {position:'relative', zIndex:500} : {}),
+        }}>
           <CallModal callId={callModalId} data={data} tasks={tasks} onOpenTask={openTaskDetail}
             onClose={()=>setCallModalId(null)} onCreateTask={openCreateTask}
+            zIndex={taskDetailId ? 500 : 300}
             onResolveCall={(qid, comment)=>{ handleProcess(qid, 'done', comment); setCallModalId(null); }}/>
         </div>
       )}
