@@ -44,7 +44,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
         </CardHeader>
         {queueTab === 'attention' && <AttentionQueue items={queue} onOpenCall={onOpenCall} onProcess={onProcess} onCreateTask={onCreateTask} tasks={tasks} onOpenTask={onOpenTask}/>}
         {queueTab === 'management' && <ManagementQueue items={queueManagement} onProcess={onProcess}/>}
-        {queueTab === 'practices' && <PracticesQueue items={queuePractices}/>}
+        {queueTab === 'practices' && <PracticesQueue items={queuePractices} onProcess={onProcess}/>}
       </Card>
 
       {/* Frame 2 — Аналитика за период.
@@ -519,7 +519,7 @@ function ManagementQueue({ items, onProcess }) {
 }
 
 // ── Лучшие практики ──────────────────────────────────────────────────────
-function PracticesQueue({ items }) {
+function PracticesQueue({ items, onProcess }) {
   const [expanded, setExpanded] = useState(null); // no row expanded by default
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
@@ -534,8 +534,7 @@ function PracticesQueue({ items }) {
           <tr>
             <th>Практика</th>
             <th style={{width:220}}>Автор</th>
-            <th style={{width:120}}>Δ конверсии</th>
-            <th style={{width:90}}>Звонков</th>
+            <th style={{width:200}}>Основание</th>
             <th style={{width:42}} aria-label=""></th>
           </tr>
         </thead>
@@ -550,8 +549,7 @@ function PracticesQueue({ items }) {
                   <div className="problem-sub">{item.desc}</div>
                 </td>
                 <td><span style={{fontWeight:500}}>{item.author}</span></td>
-                <td><Delta value={parseFloat(item.convGrowth)} suffix="%"/></td>
-                <td style={{fontVariantNumeric:'tabular-nums'}}>{item.calls}</td>
+                <td className="muted" style={{fontSize:'var(--table-secondary-font-size)'}}>{item.basis}</td>
                 <td>
                   <button type="button" className="row-toggle"
                     aria-label={isOpen ? 'Свернуть' : 'Развернуть'}
@@ -563,15 +561,15 @@ function PracticesQueue({ items }) {
               </tr>
               {isOpen && (
                 <tr>
-                  <td colSpan={5} style={{padding:0}}>
+                  <td colSpan={4} style={{padding:0}}>
                     <div className="queue-expanded">
                       <div className="recommendation-block">
                         <div className="recommendation-label"><Icon.ai size={11}/> Пример из звонка</div>
                         <div className="recommendation-text" style={{fontStyle:'italic'}}>{item.example}</div>
                       </div>
                       <div className="expanded-actions">
-                        <Button size="sm" variant="default"><Icon.calendar size={12}/> Поделиться с командой</Button>
-                        <Button size="sm" variant="outline"><Icon.phone size={12}/> Послушать звонок</Button>
+                        <Button size="lg" variant="default" onClick={()=>onProcess && onProcess(item.id, 'apply')}><Icon.check size={14}/> Применить</Button>
+                        <Button size="lg" variant="outline" onClick={()=>onProcess && onProcess(item.id, 'dismiss')}><Icon.x size={14}/> Отклонить</Button>
                       </div>
                     </div>
                   </td>
