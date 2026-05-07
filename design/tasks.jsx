@@ -275,15 +275,6 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
             <span style={{fontSize:12,color:'var(--muted-foreground)',marginLeft:4,opacity:.5}}>#{task.id}</span>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:4}}>
-            <button
-              onClick={() => { if (window.confirm('Удалить задачу?')) { onDelete(task.id); onClose(); } }}
-              style={{background:'none',border:'none',cursor:'pointer',padding:'5px 8px',
-                borderRadius:6,color:'#B91C1C',fontSize:12,fontWeight:500,
-                display:'flex',alignItems:'center',gap:5,opacity:.7}}
-              title="Удалить задачу"
-            >
-              <Icon.trash size={13}/> Удалить
-            </button>
             <button onClick={onClose}
               style={{background:'none',border:'none',cursor:'pointer',padding:5,
                 color:'var(--muted-foreground)',display:'flex',alignItems:'center',borderRadius:6}}>
@@ -399,9 +390,17 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
           </div>
         </div>
 
-        {/* Footer */}
-        <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:8,
+        {/* Footer: Удалить слева, Отмена/Закрыть задачу справа */}
+        <div style={{display:'flex',alignItems:'center',gap:8,
           padding:'13px 20px',borderTop:'1px solid var(--border)',background:'#FAFAFA'}}>
+          <Button
+            variant="ghost" size="md"
+            onClick={() => { if (window.confirm('Удалить задачу?')) { onDelete(task.id); onClose(); } }}
+            style={{color:'#B91C1C'}}
+          >
+            <Icon.trash size={13}/> Удалить
+          </Button>
+          <div style={{flex:1}}></div>
           <Button variant="outline" size="md" onClick={onClose}>Отмена</Button>
           <Button
             variant="default" size="md"
@@ -409,7 +408,7 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
             disabled={!form.title.trim()}
             style={!form.title.trim() ? {opacity:.5,pointerEvents:'none'} : {}}
           >
-            <Icon.check size={13}/> {dirty ? 'Сохранить изменения' : 'Закрыть'}
+            <Icon.check size={13}/> {dirty ? 'Сохранить изменения' : 'Закрыть задачу'}
           </Button>
         </div>
       </div>

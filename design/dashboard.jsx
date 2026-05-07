@@ -12,7 +12,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
       <div className="row-between">
         <div>
           <div className="page-title" style={{fontSize:20}}>Дашборд</div>
-          <div className="muted" style={{fontSize:12.5, marginTop:2}}>Команда А · 6 менеджеров · обновлено только что</div>
+          <div className="muted" style={{fontSize:12.5, marginTop:2}}>Команда А · 6 менеджеров</div>
         </div>
       </div>
 
@@ -38,7 +38,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           <div className="row" style={{gap:10, alignItems:'center'}}>
             <div className="muted" style={{fontSize:12, display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap'}}>
               <span style={{width:6, height:6, borderRadius:3, background:'#22C55E', display:'inline-block', flexShrink:0}}></span>
-              обновлено только что · авто
+              обновлено только что
             </div>
           </div>
         </CardHeader>
