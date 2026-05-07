@@ -229,6 +229,24 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .crumb-sep { color: var(--border-strong); }
 
 .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+/* Нейроаналитик toggle (Topbar). Скрывается, когда дровер уже открыт. */
+.ai-toggle-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: var(--radius);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff; font-weight: 600; font-size: 13px; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(29,78,216,.2);
+  transition: background .15s, border-color .15s, box-shadow .15s, transform .05s;
+}
+.ai-toggle-btn:hover {
+  background: var(--primary-hover, var(--primary-strong));
+  border-color: var(--primary-hover, var(--primary-strong));
+  box-shadow: 0 4px 10px rgba(29,78,216,.28);
+}
+.ai-toggle-btn:active { transform: translateY(1px); }
+.ai-toggle-btn:focus-visible { outline: 2px solid rgba(29,78,216,.45); outline-offset: 2px; }
 .search-input {
   display: flex; align-items: center; gap: 7px;
   width: 280px; height: 34px;
@@ -1051,6 +1069,15 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .ai-quick { padding: 0 14px 8px; display: flex; flex-direction: column; gap: 5px; }
 .ai-quick-btn { padding: 7px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--muted); color: #3F3F46; font-size: 12px; font-weight: 500; cursor: pointer; text-align: left; }
 .ai-quick-btn:hover { background: var(--primary-soft); color: var(--primary-strong); border-color: var(--primary-soft); }
+.ai-reset-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 999px;
+  background: transparent; color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  font-size: 11.5px; font-weight: 500; cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.ai-reset-btn:hover { background: var(--secondary); color: var(--foreground); border-color: var(--border-strong); }
 .ai-input-wrap { padding: 10px 14px 14px; border-top: 1px solid var(--border); }
 .ai-input-bar { display: flex; align-items: center; gap: 6px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px 6px 12px; }
 .ai-input-bar:focus-within { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(29,78,216,.1); }

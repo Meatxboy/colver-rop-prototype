@@ -289,20 +289,15 @@ function Topbar({ title, breadcrumbs, onAiToggle, aiOpen, route }) {
         ) : <div className="page-title">{title}</div>}
       </div>
       <div className="topbar-right">
-        <button
-          onClick={onAiToggle}
-          title="Нейроаналитик"
-          style={{
-            display:'inline-flex', alignItems:'center', gap:7,
-            padding:'8px 14px', borderRadius:'var(--radius)',
-            border: aiOpen ? '1px solid var(--primary)' : '1px solid var(--primary)',
-            background: aiOpen ? 'var(--primary-strong)' : 'var(--primary)',
-            color:'#fff', fontWeight:600, fontSize:13, cursor:'pointer',
-            boxShadow:'0 1px 2px rgba(29,78,216,.2)'
-          }}>
-          <Icon.ai size={15}/>
-          <span>Нейроаналитик</span>
-        </button>
+        {!aiOpen && (
+          <button
+            className="ai-toggle-btn"
+            onClick={onAiToggle}
+            title="Нейроаналитик">
+            <Icon.ai size={15}/>
+            <span>Нейроаналитик</span>
+          </button>
+        )}
       </div>
     </header>
   );

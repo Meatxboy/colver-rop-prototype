@@ -1,8 +1,7 @@
 // ── AI Assistant panel ─────────────────────────────────────────────────
-function AiPanel({ onClose, onCollapse, context, messages: extMessages, setMessages: extSetMessages }) {
-  const initial = [
-    { role: 'assistant', content: `Привет! Я Colver AI, помогу проанализировать звонки команды. Вижу, у вас 7 звонков требуют внимания. С чего начнём?` },
-  ];
+function AiPanel({ onClose, onCollapse, context, initialWelcome, messages: extMessages, setMessages: extSetMessages }) {
+  const welcome = initialWelcome || 'Привет! Я Виртуальный РОП, помогу проанализировать звонки команды. С чего начнём?';
+  const initial = [{ role: 'assistant', content: welcome }];
   const [localMessages, setLocalMessages] = useState(extMessages || initial);
   const messages = localMessages;
   const setMessages = (updater) => {
@@ -19,6 +18,13 @@ function AiPanel({ onClose, onCollapse, context, messages: extMessages, setMessa
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, thinking]);
+
+  const resetChat = () => {
+    setMessages([{ role: 'assistant', content: welcome }]);
+    setInput('');
+    setThinking(false);
+  };
+  const hasUserSent = messages.some(m => m.role === 'user');
 
   const send = (text) => {
     if (!text.trim()) return;
@@ -52,13 +58,13 @@ function AiPanel({ onClose, onCollapse, context, messages: extMessages, setMessa
         <div className="ai-header-info">
           <div className="ai-logo"><Icon.ai size={16}/></div>
           <div className="ai-title-stack">
-            <div className="ai-title">Colver AI</div>
+            <div className="ai-title">Нейроаналитик</div>
             <div className="ai-subtitle"><span className="live-dot"></span> Анализирует команду А</div>
           </div>
         </div>
         <div style={{display:'flex', gap:6}}>
           <button className="icon-btn" onClick={onCollapse} title="Свернуть — диалог сохранится" style={{width:30, height:30}}><Icon.chevDown size={14} style={{transform:'rotate(-90deg)'}}/></button>
-          <button className="icon-btn" onClick={onClose} title="Закрыть — диалог будет очищен" style={{width:30, height:30}}><Icon.x size={14}/></button>
+          <button className="icon-btn" onClick={onClose} title="Закрыть" style={{width:30, height:30}}><Icon.x size={14}/></button>
         </div>
       </div>
 
@@ -91,13 +97,24 @@ function AiPanel({ onClose, onCollapse, context, messages: extMessages, setMessa
         </div>
       )}
 
+      {hasUserSent && (
+        <div style={{display:'flex', justifyContent:'flex-start', padding:'4px 12px 0'}}>
+          <button
+            type="button"
+            onClick={resetChat}
+            className="ai-reset-btn"
+            title="Очистить диалог и начать заново">
+            <Icon.refresh size={12}/> Начать заново
+          </button>
+        </div>
+      )}
       <div className="ai-input-wrap">
         <div className="ai-input-bar">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') send(input); }}
-            placeholder="Спросите Colver AI..."
+            placeholder="Спросите Нейроаналитика..."
           />
           <button className="player-btn" onClick={()=>send(input)} style={{width:28, height:28}}>
             <Icon.send size={12}/>

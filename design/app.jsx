@@ -177,6 +177,31 @@ function App() {
 
   const aiContext = callModalId ? `звонок #${callModalId}` : route.page === 'calls' ? 'список звонков' : route.page;
 
+  // Контекстное приветствие для нейроаналитика — зависит от текущей страницы.
+  // Используется при первом открытии и при «Начать заново».
+  const aiWelcome = (() => {
+    const attentionCount = data.queue?.length ?? 0;
+    const callsCount     = data.calls?.length ?? 0;
+    const openTasksCount = tasks.filter(t => t.status !== 'done' && t.status !== 'partial').length;
+    const plural = (n, [one, few, many]) => {
+      const m10 = n % 10, m100 = n % 100;
+      if (m10 === 1 && m100 !== 11) return one;
+      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+      return many;
+    };
+    if (route.page === 'tasks') {
+      return `Привет! Я Виртуальный РОП, помогу с задачами команды. Сейчас в работе ${openTasksCount} ${plural(openTasksCount, ['открытая задача','открытые задачи','открытых задач'])}. С чего начнём?`;
+    }
+    if (route.page === 'calls') {
+      return `Привет! Я Виртуальный РОП, помогу разобрать звонки команды. На текущей странице ${callsCount} ${plural(callsCount, ['звонок','звонка','звонков'])}. С чего начнём?`;
+    }
+    if (route.page === 'processed') {
+      return `Привет! Я Виртуальный РОП, помогу с аналитикой обработанных кейсов. Подскажу тренды и закономерности. С чего начнём?`;
+    }
+    // dashboard / прочие
+    return `Привет! Я Виртуальный РОП, помогу проанализировать звонки команды. Вижу, у вас ${attentionCount} ${plural(attentionCount, ['звонок требует','звонка требуют','звонков требуют'])} внимания. С чего начнём?`;
+  })();
+
   return (
     <div className="app">
       <Sidebar
@@ -242,10 +267,11 @@ function App() {
             is too narrow to keep the panel inline (≤1230px). */}
         <div className="ai-panel-backdrop" onClick={()=>setAiOpen(false)}/>
         <AiPanel
-          onClose={()=>{ setAiOpen(false); setAiMessages(null); }}
+          onClose={()=>setAiOpen(false)}
           onCollapse={()=>setAiOpen(false)}
           messages={aiMessages}
           setMessages={setAiMessages}
+          initialWelcome={aiWelcome}
           context={aiContext}/>
       </Fragment>}
       <Tweaks tweaks={tweaks} setTweaks={setTweaks} visible={tweaksVisible} setVisible={setTweaksVisible}/>
