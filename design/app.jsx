@@ -25,7 +25,40 @@ function App() {
     showToast('Задача создана');
   };
   const handleUpdateTask = (task) => {
-    setTasks(ts => ts.map(t => t.id === task.id ? task : t));
+    setTasks(ts => {
+      const prev = ts.find(t => t.id === task.id);
+      const next = ts.map(t => t.id === task.id ? task : t);
+      // Автоматическое закрытие звонка: если РОП-задача закрыта (done),
+      // и есть связанный queue-item — отметить решённым.
+      const becameDone = prev && prev.status !== 'done' && task.status === 'done';
+      if (becameDone && task.creator === 'rop' && task.callId) {
+        const norm = (id) => String(id || '').replace(/^C-/, '');
+        setData(d => {
+          const qItem = d.queue.find(q => norm(q.callId) === norm(task.callId));
+          if (!qItem) return d;
+          return {
+            ...d,
+            queue: d.queue.filter(i => i.id !== qItem.id),
+            processed: [
+              {
+                id: 'P' + Date.now(),
+                callId: qItem.callId,
+                problem: qItem.problem,
+                manager: qItem.manager,
+                action: 'done',
+                comment: `Закрыто автоматически при выполнении задачи ${task.id}`,
+                rop: 'Алексей П.',
+                date: 'сейчас',
+                outcome: 'good',
+              },
+              ...d.processed,
+            ],
+          };
+        });
+        showToast(`Задача ${task.id} закрыта · звонок отмечен решённым`);
+      }
+      return next;
+    });
   };
   const handleDeleteTask = (id) => {
     setTasks(ts => ts.filter(t => t.id !== id));
@@ -207,7 +240,7 @@ function App() {
     pageContent = <ProcessedPage data={{ ...data, tasks }} onOpenCall={openCall}/>;
     breadcrumbs = [{ label:'Обработанные' }];
   } else if (route.page === 'tasks') {
-    pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention} onTaskClosed={(t) => showToast(`Задача «${t.title}» перенесена в «Выполнено»`)}/>;
+    pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onUpdateTask={handleUpdateTask} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention} onTaskClosed={(t) => showToast(`Задача «${t.title}» перенесена в «Выполнено»`)}/>;
     breadcrumbs = [{ label:'Задачи' }];
   } else if (route.page === 'manager' || route.page === 'settings' || route.page === 'analytics') {
     pageContent = <div className="content"><EmptyState

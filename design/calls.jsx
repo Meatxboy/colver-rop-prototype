@@ -32,6 +32,8 @@ function AgGridReactLite({
       headerHeight: 40,
       suppressCellFocus: true,
       animateRows: false,
+      // Empty state «Нет данных» поверх грида когда rowData пустой.
+      overlayNoRowsTemplate: '<div style="padding:40px 24px;text-align:center;color:var(--muted-foreground)"><div style="font-size:14px;font-weight:600;margin-bottom:4px">Нет данных</div><div style="font-size:12.5px">По выбранным фильтрам нет звонков.</div></div>',
       pagination: true,
       paginationPageSize: initialPageSize,
       // We render a custom pager below the grid (matches dashboard style).

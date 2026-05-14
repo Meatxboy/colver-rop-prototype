@@ -57,11 +57,15 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
         </div>
         <div className="analytics-body">
 
+          {/* Пороговые цвета KPI:
+              avgScore: ≤3 — red, >4 — green; иначе — базовый (foreground).
+              Проценты: ≤60 — red, >80 — green; иначе — базовый. */}
+          {(() => null)()}
           <div className="kpi-grid">
             <Card className="kpi-card">
               <div className="kpi-label">Средняя оценка звонка <Tooltip text="Среднее от всех оценок звонков за выбранный период"/></div>
               <div className="kpi-value-row">
-                <div className={cn('kpi-value', kpis.avgScore >= 4 ? 'is-good' : kpis.avgScore >= 3 ? 'is-warn' : 'is-bad')}>{kpis.avgScore.toFixed(1)}</div>
+                <div className={cn('kpi-value', kpiTone(kpis.avgScore, 3, 4))}>{kpis.avgScore.toFixed(1)}</div>
                 <span className="kpi-unit">/ 5</span>
               </div>
               <div className="kpi-meta">
@@ -69,25 +73,25 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
                 <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
               </div>
             </Card>
-            <Card className="kpi-card is-success">
+            <Card className="kpi-card">
               <div className="kpi-label">Доля звонков с результатом <Tooltip text="Процент звонков, в которых зафиксировано целевое действие (продажа, заявка, согласие на встречу и т. п.)"/></div>
-              <div className="kpi-value-row"><div className="kpi-value">{kpis.withResult}%</div></div>
+              <div className="kpi-value-row"><div className={cn('kpi-value', kpiTone(kpis.withResult, 60, 80))}>{kpis.withResult}%</div></div>
               <div className="kpi-meta">
                 <Delta value={kpis.withResultDelta} suffix=" пп"/>
                 <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
               </div>
             </Card>
-            <Card className="kpi-card is-primary">
-              <div className="kpi-label">Конверсия в целевое действие <Tooltip text="Доля звонков с зафиксированным целевым действием"/></div>
-              <div className="kpi-value-row"><div className="kpi-value">{kpis.conversion}%</div></div>
+            <Card className="kpi-card">
+              <div className="kpi-label">Конверсия в результат <Tooltip text="Доля звонков с зафиксированным результатом (продажа, заявка, встреча и т. п.)"/></div>
+              <div className="kpi-value-row"><div className={cn('kpi-value', kpiTone(kpis.conversion, 60, 80))}>{kpis.conversion}%</div></div>
               <div className="kpi-meta">
                 <Delta value={kpis.convDelta} suffix=" пп"/>
                 <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
               </div>
             </Card>
-            <Card className="kpi-card is-success">
+            <Card className="kpi-card">
               <div className="kpi-label">Доля звонков с договорённостью <Tooltip text="Процент звонков, завершённых фиксацией следующего шага или договорённости (встреча, расчёт, обратный звонок и т. п.)"/></div>
-              <div className="kpi-value-row"><div className="kpi-value">{kpis.withAgreement}%</div></div>
+              <div className="kpi-value-row"><div className={cn('kpi-value', kpiTone(kpis.withAgreement, 60, 80))}>{kpis.withAgreement}%</div></div>
               <div className="kpi-meta">
                 <Delta value={kpis.withAgreementDelta} suffix=" пп"/>
                 <span className="muted" style={{fontSize:12}}>к прошлой неделе</span>
@@ -266,10 +270,20 @@ function QueuePager({ total, page, pageSize, setPage, setPageSize, totalPages, p
 // Strip 'C-' prefix so queue.callId ('C-1841') matches task.callId ('1841').
 const normCallId = (id) => String(id || '').replace(/^C-/, '');
 // Find an OPEN task linked to a call (planned/queued/in_progress/paused).
+// Возвращает первую найденную (используется в CallModal-шапке).
 const findOpenTask = (tasks, callId) => {
   if (!tasks || !callId) return null;
   const target = normCallId(callId);
   return tasks.find(t => normCallId(t.callId) === target && t.status !== 'done' && t.status !== 'partial') || null;
+};
+// Возвращает массив всех задач по звонку (до 2 — менеджер + РОП).
+// Manager-задачи в статусе done остаются в списке (показываются зелёной
+// иконкой). RoP-задачи в done тут не возникают — при закрытии РОП-задачи
+// звонок убирается из очереди вместе с item.
+const findCallTasks = (tasks, callId) => {
+  if (!tasks || !callId) return [];
+  const target = normCallId(callId);
+  return tasks.filter(t => normCallId(t.callId) === target);
 };
 
 // ── Resolve modal — optional comment when marking a queue case as resolved ──
@@ -310,12 +324,42 @@ function ResolveModal({ item, onClose, onConfirm }) {
   );
 }
 
+// ── Salute (микро-confetti) для кнопки «Отметить решённым» ──────────────
+function SaluteOverlay() {
+  // 8 частиц, разлетающихся от центра в равномерно распределённые стороны.
+  const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+  return (
+    <Fragment>
+      {angles.map((deg, i) => {
+        const r = 28 + (i % 2) * 6; // лёгкая вариация радиуса
+        const rad = deg * Math.PI / 180;
+        const dx = Math.cos(rad) * r;
+        const dy = Math.sin(rad) * r;
+        return (
+          <span key={i} className="salute-particle"
+            style={{ '--dx': dx + 'px', '--dy': dy + 'px',
+                     animationDelay: (i * 15) + 'ms',
+                     background: i % 2 ? '#22C55E' : '#16A34A' }}/>
+        );
+      })}
+    </Fragment>
+  );
+}
+
 // ── Attention Queue ──────────────────────────────────────────────────────
 function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onOpenTask }) {
   const [expanded, setExpanded] = useState(null); // no row expanded by default
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
   const [resolveItem, setResolveItem] = useState(null);
+  const [saluteFor, setSaluteFor] = useState(null);
+  // При клике на «Отметить решённым» — мгновенно «салютим», параллельно
+  // открываем ResolveModal. Через 700мс state снимается.
+  const triggerResolve = (item) => {
+    setSaluteFor(item.id);
+    setResolveItem(item);
+    setTimeout(() => setSaluteFor(s => s === item.id ? null : s), 700);
+  };
 
   // Tri-state sort by Приоритет / Менеджер / Балл / Давность (rule 3).
   const { sortKey, sortDir, sortBy } = useTriStateSort();
@@ -332,7 +376,7 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
   if (items.length === 0) {
     return <EmptyState
       icon={<Icon.check size={26}/>}
-      title="Очередь пуста"
+      title="Нет данных"
       desc="Все критичные звонки разобраны. AI продолжает мониторинг новых разговоров."
     />;
   }
@@ -346,13 +390,15 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
             <th style={{width:240}} className="sortable" onClick={()=>onSort('manager')}>Менеджер<SortIndicator active={sortKey==='manager'} dir={sortDir}/></th>
             <th style={{width:80}} className="sortable" onClick={()=>onSort('score')}>Балл<SortIndicator active={sortKey==='score'} dir={sortDir}/></th>
             <th style={{width:130}} className="sortable" onClick={()=>onSort('ageMin')}>Давность<SortIndicator active={sortKey==='ageMin'} dir={sortDir}/></th>
-            <th style={{width:36}} aria-label=""></th>
+            <th style={{width:60}} aria-label=""></th>
             <th style={{width:42}} aria-label=""></th>
           </tr>
         </thead>
         <tbody>
           {pagedItems.map(item => {
-            const openTask = findOpenTask(tasks, item.callId);
+            const callTasks = findCallTasks(tasks, item.callId);
+            const openRopTask = callTasks.find(t => t.creator === 'rop' && t.status !== 'done' && t.status !== 'partial');
+            const openTask = openRopTask || callTasks.find(t => t.status !== 'done' && t.status !== 'partial');
             const isOpen = expanded === item.id;
             return (
             <QFrag key={item.id}>
@@ -373,15 +419,27 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
                   </span>
                 </td>
                 <td>
-                  {openTask && (
-                    <button
-                      type="button"
-                      className="task-indicator"
-                      title={`Есть открытая задача · ${openTask.id}`}
-                      onClick={(e) => { e.stopPropagation(); onOpenTask && onOpenTask(openTask); }}>
-                      <Icon.taskBadge size={13}/>
-                    </button>
-                  )}
+                  {/* До 2 иконок задач: РОП-задача + менеджер-задача.
+                      manager done → зелёная; manager active → оранжевая;
+                      rop active → синяя (primary). */}
+                  <span style={{display:'inline-flex', alignItems:'center', gap:4}}>
+                    {callTasks.map(t => {
+                      const isMgr = t.creator === 'manager';
+                      const isDone = t.status === 'done' || t.status === 'partial';
+                      const cls = isMgr
+                        ? (isDone ? 'task-indicator is-done' : 'task-indicator is-manager')
+                        : 'task-indicator';
+                      const title = isMgr
+                        ? (isDone ? `Задача менеджера выполнена · ${t.id}` : `Задача менеджера · ${t.id}`)
+                        : `Задача РОП · ${t.id}`;
+                      return (
+                        <button key={t.id} type="button" className={cls} title={title}
+                          onClick={(e) => { e.stopPropagation(); onOpenTask && onOpenTask(t); }}>
+                          <Icon.taskBadge size={13}/>
+                        </button>
+                      );
+                    })}
+                  </span>
                 </td>
                 <td>
                   <button
@@ -415,7 +473,10 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
                           : <Button size="lg" variant="outline" onClick={()=>onCreateTask && onCreateTask({ manager: item.manager, callId: item.callId, title: item.problem, text: item.recommendation, priority: item.priority <= 1 ? 'high' : 'medium' })}><Icon.calendar size={14}/> Поставить задачу менеджеру</Button>
                         }
                         <div style={{flex:1}}></div>
-                        <Button size="lg" variant="success" onClick={()=>setResolveItem(item)}><Icon.check size={14}/> Отметить решённым</Button>
+                        <span className="salute-wrap">
+                          <Button size="lg" variant="success" onClick={()=>triggerResolve(item)}><Icon.check size={14}/> Отметить решённым</Button>
+                          {saluteFor === item.id && <SaluteOverlay/>}
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -458,7 +519,7 @@ function ManagementQueue({ items, onProcess }) {
 
   const onSort = (k) => { sortBy(k); setPage(0); setExpanded(null); };
 
-  if (!items.length) return <EmptyState icon={<Icon.check size={26}/>} title="Нет открытых решений" desc="Системные сбои и нестандартные кейсы появятся здесь."/>;
+  if (!items.length) return <EmptyState icon={<Icon.check size={26}/>} title="Нет данных" desc="Системные сбои и нестандартные кейсы появятся здесь."/>;
   return (
     <div>
       <table className="data-table queue-table">
@@ -527,7 +588,7 @@ function PracticesQueue({ items, onProcess }) {
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const pagedItems = items.slice(page * pageSize, (page + 1) * pageSize);
 
-  if (!items.length) return <EmptyState icon={<Icon.ai size={26}/>} title="Пока нет находок" desc="AI продолжает искать эталонные приёмы в звонках команды."/>;
+  if (!items.length) return <EmptyState icon={<Icon.ai size={26}/>} title="Нет данных" desc="AI продолжает искать эталонные приёмы в звонках команды."/>;
   return (
     <div>
       <table className="data-table queue-table">
@@ -697,7 +758,7 @@ function RatingCard({ title, rows, valueKey, valueLabel, maxVal, suffix }) {
               {/* Name (без жирного начертания, не кликабельно) */}
               <div style={{flex:1, minWidth:0}}>
                 <div style={{fontWeight:500, fontSize:13, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{r.name}</div>
-                <div className="muted" style={{fontSize:12}}>{hasRank ? `${r.calls} зв.` : 'нет звонков'}</div>
+                <div className="muted" style={{fontSize:12}}>{hasRank ? `${r.calls} ${pluralCalls(r.calls)}` : 'нет звонков'}</div>
               </div>
 
               {/* Value */}
@@ -891,10 +952,10 @@ function ManagersTable({ rows, onOpen }) {
         <table className="data-table" style={{minWidth:780}}>
           <thead>
             <tr>
-              {/* Sticky first column. Ширина рассчитана под полное ФИО
-                  «Зарубашвилли Вахтанг Владимирович» + paddings. */}
+              {/* Sticky first column. Ширина минимальная, чтобы вмещать
+                  «Зарубашвилли Вахтанг Владимирович» при font-size 14. */}
               <th onClick={()=>onSort('name')} className="sortable"
-                style={{position:'sticky', left:0, background:'var(--card)', zIndex:2, minWidth:260, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
+                style={{position:'sticky', left:0, background:'var(--card)', zIndex:2, minWidth:240, boxShadow:'2px 0 4px rgba(0,0,0,.06)'}}>
                 Специалист<SI k="name"/>
               </th>
               {/* Числовые колонки — единая ширина 130 для одинакового

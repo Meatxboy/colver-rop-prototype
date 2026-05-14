@@ -18,19 +18,24 @@ const TASK_PRIO = {
 function initTasks(data) {
   const m = data.managers || [];
   const g = i => m[i]?.name || null;
+  // creator: 'manager' | 'rop' — кто создал задачу. Влияет на иконку
+  // в очереди внимания и на логику «решено» при закрытии задачи.
+  // withObserver: true → второй роль наблюдает за задачей (приходят уведомления).
   return [
-    { id:'T-01', title:'Провести разбор: возражение по цене не отработано',           text:'Менеджер дважды пропустил стандартный скрипт ответа на «дорого». Послушать звонок и разобрать конкретные моменты.',     manager:g(0), priority:'high',   status:'planned',     callId:'1841', dueDate:'2026-05-02', createdAt:'2026-04-28' },
-    { id:'T-02', title:'Проверить соблюдение скрипта за последние 7 дней',            text:'',                                                                                                                              manager:g(1), priority:'medium', status:'planned',     callId:null,   dueDate:'2026-05-05', createdAt:'2026-04-28' },
-    { id:'T-03', title:'Назначить тренинг по работе с возражением «Дорого»',          text:'',                                                                                                                              manager:g(2), priority:'high',   status:'queued',      callId:null,   dueDate:'2026-05-03', createdAt:'2026-04-27' },
-    { id:'T-04', title:'Отправить письменную обратную связь по итогам недели',        text:'',                                                                                                                              manager:g(0), priority:'low',    status:'queued',      callId:null,   dueDate:'2026-05-07', createdAt:'2026-04-27' },
-    { id:'T-05', title:'Прослушать 5 случайных звонков — выставить ручную оценку',   text:'',                                                                                                                              manager:g(3), priority:'medium', status:'in_progress', callId:null,   dueDate:'2026-05-01', createdAt:'2026-04-26' },
-    { id:'T-06', title:'Подготовить материалы к еженедельному разбору провалов',      text:'',                                                                                                                              manager:g(1), priority:'high',   status:'in_progress', callId:null,   dueDate:'2026-05-02', createdAt:'2026-04-26' },
-    { id:'T-07', title:'Согласовать обновлённый скрипт с командой',                   text:'',                                                                                                                              manager:g(4), priority:'medium', status:'paused',      callId:null,   dueDate:'2026-05-04', createdAt:'2026-04-25' },
-    { id:'T-08', title:'Разобрать: менеджер не зафиксировал следующий шаг',           text:'',                                                                                                                              manager:g(2), priority:'high',   status:'paused',      callId:'1841', dueDate:'2026-04-30', createdAt:'2026-04-25' },
-    { id:'T-09', title:'Встреча 1-на-1: низкая конверсия за апрель',                  text:'',                                                                                                                              manager:g(5), priority:'medium', status:'partial',     callId:null,   dueDate:'2026-04-29', createdAt:'2026-04-24' },
-    { id:'T-10', title:'Выгрузить сводный отчёт по звонкам за апрель',                text:'',                                                                                                                              manager:null, priority:'low',    status:'partial',     callId:null,   dueDate:'2026-05-07', createdAt:'2026-04-24' },
-    { id:'T-11', title:'Итоговая оценка всех менеджеров за апрель',                   text:'',                                                                                                                              manager:null, priority:'medium', status:'done',        callId:null,   dueDate:'2026-04-30', createdAt:'2026-04-23' },
-    { id:'T-12', title:'Обратная связь после тренинга по скрипту (апрель)',            text:'',                                                                                                                              manager:g(3), priority:'low',    status:'done',        callId:null,   dueDate:'2026-04-28', createdAt:'2026-04-22' },
+    { id:'T-01', title:'Провести разбор: возражение по цене не отработано',           text:'Менеджер дважды пропустил стандартный скрипт ответа на «дорого». Послушать звонок и разобрать конкретные моменты.',     manager:g(0), priority:'high',   status:'planned',     callId:'1841', dueDate:'2026-05-02', createdAt:'2026-04-28', creator:'rop' },
+    { id:'T-02', title:'Проверить соблюдение скрипта за последние 7 дней',            text:'',                                                                                                                              manager:g(1), priority:'medium', status:'planned',     callId:null,   dueDate:'2026-05-05', createdAt:'2026-04-28', creator:'rop' },
+    { id:'T-03', title:'Назначить тренинг по работе с возражением «Дорого»',          text:'',                                                                                                                              manager:g(2), priority:'high',   status:'queued',      callId:null,   dueDate:'2026-05-03', createdAt:'2026-04-27', creator:'rop' },
+    { id:'T-04', title:'Отправить письменную обратную связь по итогам недели',        text:'',                                                                                                                              manager:g(0), priority:'low',    status:'queued',      callId:null,   dueDate:'2026-05-07', createdAt:'2026-04-27', creator:'rop' },
+    { id:'T-05', title:'Прослушать 5 случайных звонков — выставить ручную оценку',   text:'',                                                                                                                              manager:g(3), priority:'medium', status:'in_progress', callId:null,   dueDate:'2026-05-01', createdAt:'2026-04-26', creator:'rop' },
+    { id:'T-06', title:'Подготовить материалы к еженедельному разбору провалов',      text:'',                                                                                                                              manager:g(1), priority:'high',   status:'in_progress', callId:null,   dueDate:'2026-05-02', createdAt:'2026-04-26', creator:'rop' },
+    { id:'T-07', title:'Согласовать обновлённый скрипт с командой',                   text:'',                                                                                                                              manager:g(4), priority:'medium', status:'paused',      callId:null,   dueDate:'2026-05-04', createdAt:'2026-04-25', creator:'rop' },
+    // T-08: задача менеджера по звонку C-1841 — добавлена с РОП-наблюдателем.
+    // По этому звонку в очереди внимания будет показано 2 иконки задач.
+    { id:'T-08', title:'Перезвонить клиенту с предложением',                          text:'Связаться с клиентом, предложить решение со скидкой 7%.',                                                                       manager:g(0), priority:'high',   status:'in_progress', callId:'1841', dueDate:'2026-04-30', createdAt:'2026-04-25', creator:'manager', withObserver:true },
+    { id:'T-09', title:'Встреча 1-на-1: низкая конверсия за апрель',                  text:'',                                                                                                                              manager:g(5), priority:'medium', status:'partial',     callId:null,   dueDate:'2026-04-29', createdAt:'2026-04-24', creator:'rop' },
+    { id:'T-10', title:'Выгрузить сводный отчёт по звонкам за апрель',                text:'',                                                                                                                              manager:null, priority:'low',    status:'partial',     callId:null,   dueDate:'2026-05-07', createdAt:'2026-04-24', creator:'rop' },
+    { id:'T-11', title:'Итоговая оценка всех менеджеров за апрель',                   text:'',                                                                                                                              manager:null, priority:'medium', status:'done',        callId:null,   dueDate:'2026-04-30', createdAt:'2026-04-23', creator:'rop' },
+    { id:'T-12', title:'Обратная связь после тренинга по скрипту (апрель)',            text:'',                                                                                                                              manager:g(3), priority:'low',    status:'done',        callId:null,   dueDate:'2026-04-28', createdAt:'2026-04-22', creator:'rop' },
   ];
 }
 
@@ -45,12 +50,14 @@ function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenC
     status:   prefill.status   || 'planned',
     dueDate:  '',
     callId:   prefill.callId   || '',
+    creator:  prefill.creator  || 'rop',   // 'manager' | 'rop'
+    withObserver: prefill.withObserver !== false,
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleClear = () => setForm({
-    title:'', text:'', manager:'', priority:'medium', status:'planned', dueDate:'', callId:'',
+    title:'', text:'', manager:'', priority:'medium', status:'planned', dueDate:'', callId:'', creator:'rop', withObserver:true,
   });
 
   const handleSave = () => {
@@ -65,6 +72,8 @@ function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenC
       callId:    form.callId || null,
       dueDate:   form.dueDate || null,
       createdAt: '2026-05-01',
+      creator:   form.creator,
+      withObserver: form.withObserver,
     });
     onClose();
   };
@@ -188,6 +197,36 @@ function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenC
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Роль создателя + наблюдатель */}
+          <div>
+            {fieldLabel('Создаю задачу как')}
+            <div style={{display:'flex', gap:8}}>
+              <button type="button" onClick={() => set('creator', 'rop')}
+                style={{flex:1, padding:'8px 10px', border: form.creator==='rop' ? '1px solid var(--primary)' : '1px solid var(--border)',
+                  borderRadius:6, background: form.creator==='rop' ? 'var(--primary-soft)' : '#fff',
+                  color: form.creator==='rop' ? 'var(--primary-strong)' : 'var(--foreground)',
+                  fontWeight:600, fontSize:12.5, cursor:'pointer'}}>
+                РОП
+              </button>
+              <button type="button" onClick={() => set('creator', 'manager')}
+                style={{flex:1, padding:'8px 10px', border: form.creator==='manager' ? '1px solid #D97706' : '1px solid var(--border)',
+                  borderRadius:6, background: form.creator==='manager' ? '#FED7AA' : '#fff',
+                  color: form.creator==='manager' ? '#92400E' : 'var(--foreground)',
+                  fontWeight:600, fontSize:12.5, cursor:'pointer'}}>
+                Менеджер
+              </button>
+            </div>
+            <label style={{display:'flex', alignItems:'center', gap:8, marginTop:8, fontSize:12.5, cursor:'pointer'}}>
+              <input type="checkbox" checked={form.withObserver}
+                onChange={e => set('withObserver', e.target.checked)}/>
+              <span>
+                {form.creator === 'manager'
+                  ? 'Добавить РОП наблюдателем (РОП увидит задачу в очереди внимания)'
+                  : 'Добавить менеджера наблюдателем'}
+              </span>
+            </label>
           </div>
         </div>
 
@@ -790,7 +829,7 @@ function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOverCol, onDro
 }
 
 // ── TasksPage ─────────────────────────────────────────────────────────────
-function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, onTaskClosed, data }) {
+function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, onTaskClosed, onUpdateTask, data }) {
   const [draggingId, setDraggingId]   = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
   // Drop-target card для вертикального реордеринга внутри колонки.
@@ -881,7 +920,10 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, onTas
   };
 
   const handleSaveDetail = updatedTask => {
-    setTasks(ts => ts.map(t => t.id === updatedTask.id ? updatedTask : t));
+    // Делегируем в app-handler чтобы запустить side-эффекты
+    // (например, автозакрытие звонка при выполнении РОП-задачи).
+    if (onUpdateTask) onUpdateTask(updatedTask);
+    else setTasks(ts => ts.map(t => t.id === updatedTask.id ? updatedTask : t));
   };
 
   const detailTask = detailTaskId ? tasks.find(t => t.id === detailTaskId) : null;

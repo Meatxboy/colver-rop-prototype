@@ -245,7 +245,6 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; }
 .topbar {
   height: var(--header-h);
   background: #fff;
-  border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 24px;
   position: sticky; top: 0;
@@ -843,6 +842,27 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
 .kpi-card.is-warning .kpi-value { color: var(--warning); }
 .kpi-card.is-success .kpi-value { color: var(--success); }
 .kpi-card.is-primary .kpi-value { color: var(--primary); }
+/* Пороговая окраска значения KPI (kpiTone). Перебивает card-level цвета. */
+.kpi-value.is-good { color: var(--success-strong, var(--success)) !important; }
+.kpi-value.is-bad  { color: var(--danger-strong,  var(--danger))  !important; }
+
+/* ── Salute-микроанимация при «Отметить решённым» ───────────────────── */
+.salute-wrap { position: relative; display: inline-flex; }
+.salute-particle {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #22C55E;
+  pointer-events: none;
+  opacity: 0;
+  animation: saluteParticle .65s ease-out forwards;
+}
+@keyframes saluteParticle {
+  0%   { transform: translate(-50%, -50%) scale(.4); opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.7); opacity: 0; }
+}
 
 /* ── Section header ──────────────────────────────────────────────────── */
 .section-h-title { font-size: 18px; font-weight: 700; letter-spacing: -0.1px; }
@@ -926,6 +946,16 @@ button.period-day.is-clickable:hover { background: var(--secondary); }
   transition: background .12s;
 }
 .task-indicator:hover { background: var(--primary-soft-hover); }
+/* Задача менеджера (creator='manager') — оранжевая. */
+.task-indicator.is-manager {
+  border-color: #D97706; background: #FED7AA; color: #92400E;
+}
+.task-indicator.is-manager:hover { background: #FDBA74; }
+/* Задача менеджера в статусе «Выполнено» — зелёная. */
+.task-indicator.is-done {
+  border-color: var(--success-strong, #15803D); background: #BBF7D0; color: #14532D;
+}
+.task-indicator.is-done:hover { background: #86EFAC; }
 .task-indicator.is-chip {
   width: auto; height: 28px;
   padding: 0 10px; gap: 5px;

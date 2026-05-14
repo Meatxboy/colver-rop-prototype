@@ -612,6 +612,24 @@ function useModalZ(base = 200) {
   return z;
 }
 
+// Русская плюрализация для «звонок / звонка / звонков».
+function pluralCalls(n) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 'звонок';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 'звонка';
+  return 'звонков';
+}
+
+// kpiTone — возвращает класс окраски KPI-значения по пороговым правилам.
+// value ≤ redMax → 'is-bad' (красный), value > greenMin → 'is-good' (зелёный),
+// иначе — '' (без класса = базовый foreground/чёрный).
+function kpiTone(value, redMax, greenMin) {
+  if (value == null || Number.isNaN(value)) return '';
+  if (value <= redMax) return 'is-bad';
+  if (value > greenMin) return 'is-good';
+  return '';
+}
+
 // Tri-state sort: 1st click → asc, 2nd → desc, 3rd → reset to initial.
 // Без initial — reset == unsorted (data's original order). С initial —
 // reset возвращает таблицу к стартовому отображению (например, score desc
@@ -675,6 +693,6 @@ Object.assign(window, {
   cn, Icon, Button, Badge, PriorityBadge, Card, CardHeader, CardTitle, CardContent,
   Tabs, Avatar, Progress, ScoreCell, PercentCell, Delta, Sparkline, Tooltip,
   Switch, Select, PeriodSelector, Pagination, EmptyState, Modal,
-  useTriStateSort, SortIndicator, applyTriStateSort, CallDirectionIcon, useModalZ,
+  useTriStateSort, SortIndicator, applyTriStateSort, CallDirectionIcon, useModalZ, kpiTone, pluralCalls,
   formatAge,
 });
