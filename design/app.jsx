@@ -82,6 +82,33 @@ function App() {
     setTasks(ts => ts.filter(t => t.id !== id));
   };
 
+  // ── Online / offline detection ──────────────────────────────────────────
+  // navigator.onLine + window events. demoOffline — для прототипа: даёт
+  // возможность принудительно показать страницу через window.__offline=true
+  // или через user-меню (см. Sidebar). Финальный isOffline = реальное
+  // состояние ИЛИ demo-флаг.
+  const [isReallyOffline, setIsReallyOffline] = useState(() =>
+    typeof navigator !== 'undefined' && navigator.onLine === false
+  );
+  const [demoOffline, setDemoOffline] = useState(false);
+  useEffect(() => {
+    const onOnline  = () => setIsReallyOffline(false);
+    const onOffline = () => setIsReallyOffline(true);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+  const isOffline = isReallyOffline || demoOffline;
+  // Глобальная команда для тестирования из консоли:
+  // window.__toggleOffline()
+  useEffect(() => {
+    window.__toggleOffline = () => setDemoOffline(v => !v);
+    return () => { delete window.__toggleOffline; };
+  }, []);
+
   // ── Notifications ──────────────────────────────────────────────────────
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState(() => initNotifications());
@@ -319,6 +346,7 @@ function App() {
         currentRole={currentRole}
         currentUserName={currentUserName}
         onSwitchRole={switchRole}
+        onSimulateOffline={() => setDemoOffline(true)}
       />
       <main className="main">
         <Topbar
@@ -454,6 +482,17 @@ function App() {
       </div>}
 
       <CookieBanner/>
+
+      {/* Offline overlay — поверх всего интерфейса. */}
+      {isOffline && (
+        <OfflinePage
+          onRetry={() => {
+            // Сбросить demo-флаг и пере-сверить настоящий онлайн-статус.
+            setDemoOffline(false);
+            setIsReallyOffline(typeof navigator !== 'undefined' && navigator.onLine === false);
+          }}
+        />
+      )}
     </div>
   );
 }

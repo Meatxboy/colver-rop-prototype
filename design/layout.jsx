@@ -285,7 +285,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
 }
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
-function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, currentRole = 'rop', currentUserName = 'Алексей Петров', onSwitchRole }) {
+function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, currentRole = 'rop', currentUserName = 'Алексей Петров', onSwitchRole, onSimulateOffline }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userRef = useRef(null);
   // Close user menu on outside click.
@@ -357,6 +357,19 @@ function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, cur
             >
               <Icon.user size={14}/> Войти как {currentRole === 'manager' ? 'РОП' : 'менеджер'}
             </button>
+            {/* Демо-триггер для проверки страницы «Нет интернета» в прототипе.
+                В проде эта строка не показывается. */}
+            {onSimulateOffline && (
+              <button
+                type="button"
+                className="user-menu-item"
+                style={{color:'var(--foreground)'}}
+                title="Имитировать состояние «Нет интернета»"
+                onClick={() => { setUserMenuOpen(false); onSimulateOffline(); }}
+              >
+                <Icon.refresh size={14}/> Демо: нет интернета
+              </button>
+            )}
             <button
               type="button"
               className="user-menu-item"

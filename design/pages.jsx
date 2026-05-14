@@ -519,6 +519,76 @@ function AnalyticsPage({ data, period, setPeriod }) {
   );
 }
 
+// ── Offline: нет интернета ───────────────────────────────────────────────
+// Полноэкранный overlay поверх приложения. Появляется автоматически по
+// `offline`-событию браузера или вручную через demo-флаг (для прототипа).
+function OfflinePage({ onRetry }) {
+  const [retrying, setRetrying] = useState(false);
+  const handleRetry = () => {
+    setRetrying(true);
+    setTimeout(() => {
+      setRetrying(false);
+      onRetry && onRetry();
+    }, 600);
+  };
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:9000,
+      background:'rgba(250,250,250,.96)',
+      backdropFilter:'blur(4px)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      padding:'24px 16px'
+    }}>
+      <div style={{textAlign:'center', maxWidth:480}}>
+        {/* Wi-Fi off icon */}
+        <div style={{display:'flex', justifyContent:'center', marginBottom:16}}>
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none"
+            stroke="#71717A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="1" y1="1" x2="23" y2="23"/>
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+            <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+        </div>
+        <div style={{fontSize:22, fontWeight:700, marginBottom:8}}>
+          Нет подключения к интернету
+        </div>
+        <div style={{fontSize:14, color:'var(--muted-foreground)', lineHeight:1.55, marginBottom:24}}>
+          Проверьте Wi-Fi или мобильную сеть и попробуйте обновить страницу.
+          Часть последних данных может быть устаревшей.
+        </div>
+        <button
+          onClick={handleRetry}
+          disabled={retrying}
+          style={{
+            display:'inline-flex', alignItems:'center', gap:8,
+            padding:'10px 18px', borderRadius:8,
+            background: 'var(--primary)', color:'#fff',
+            border:0, cursor: retrying ? 'default' : 'pointer',
+            fontSize:14, fontWeight:600,
+            opacity: retrying ? .6 : 1,
+            transition:'background .12s, box-shadow .12s, transform .05s',
+          }}
+          onMouseEnter={e => { if(!retrying) e.currentTarget.style.boxShadow = '0 4px 14px rgba(29,78,216,.28)'; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            style={{animation: retrying ? 'spin 1s linear infinite' : 'none'}}>
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          {retrying ? 'Проверяем…' : 'Повторить'}
+        </button>
+        <div style={{fontSize:11.5, color:'var(--muted-foreground)', marginTop:14}}>
+          Если связь восстановится автоматически — окно закроется само.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── 404: страница не найдена ─────────────────────────────────────────────
 function NotFoundPage({ onGoHome }) {
   return (
@@ -547,4 +617,4 @@ function NotFoundPage({ onGoHome }) {
   );
 }
 
-Object.assign(window, { CallDetail, CallModal, ProcessedPage, AnalyticsPage, NotFoundPage });
+Object.assign(window, { CallDetail, CallModal, ProcessedPage, AnalyticsPage, NotFoundPage, OfflinePage });
