@@ -285,7 +285,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
 }
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
-function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, currentRole = 'rop', currentUserName = 'Алексей Петров', onSwitchRole, onSimulateOffline }) {
+function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, currentRole = 'rop', currentUserName = 'Алексей Петров', onSwitchRole, onSimulateOffline, onLogout }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userRef = useRef(null);
   // Close user menu on outside click.
@@ -373,7 +373,7 @@ function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, cur
             <button
               type="button"
               className="user-menu-item"
-              onClick={() => { setUserMenuOpen(false); alert('Сеанс завершён (прототип)'); }}
+              onClick={() => { setUserMenuOpen(false); onLogout ? onLogout() : alert('Сеанс завершён (прототип)'); }}
             >
               <Icon.logout size={14}/> Выйти
             </button>

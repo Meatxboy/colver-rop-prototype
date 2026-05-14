@@ -1,5 +1,27 @@
 // ── Main app ────────────────────────────────────────────────────────────
 function App() {
+  // ── Аутентификация ────────────────────────────────────────────────────
+  // В прототипе: любой логин/пароль ≥3 символов принимается. Флаг
+  // запоминается в localStorage. По умолчанию (если запись отсутствует)
+  // считаем пользователя залогиненным — чтобы прототип сразу открывался.
+  // «Выйти» в user-меню сбрасывает флаг и показывает LoginPage.
+  // Хуки нельзя пропускать → ранний return после ВСЕХ хуков (см. ниже).
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const v = localStorage.getItem('colver_auth');
+    return v === null ? true : v === '1';
+  });
+  const handleLogin = ({ login, remember }) => {
+    setIsAuthenticated(true);
+    try {
+      if (remember) localStorage.setItem('colver_auth', '1');
+      else sessionStorage.setItem('colver_auth', '1');
+    } catch {}
+  };
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    try { localStorage.setItem('colver_auth', '0'); } catch {}
+  };
+
   const [route, setRoute] = useState({ page: 'dashboard' });
 
   // ── Роль текущего пользователя ──────────────────────────────────────────
@@ -284,6 +306,11 @@ function App() {
   // Стекинг модалок через useModalZ — каждая новая модалка получает
   // z-index выше предыдущей, так что любую можно открыть поверх любой.
 
+  // ── Гейт авторизации ──────────────────────────────────────────────────
+  // Если не залогинен — показываем LoginPage. Все хуки выше уже были
+  // вызваны, поэтому порядок хуков остаётся стабильным.
+  if (!isAuthenticated) return <LoginPage onLogin={handleLogin}/>;
+
   // Routing
   let pageContent = null;
   let breadcrumbs = null;
@@ -347,6 +374,7 @@ function App() {
         currentUserName={currentUserName}
         onSwitchRole={switchRole}
         onSimulateOffline={() => setDemoOffline(true)}
+        onLogout={handleLogout}
       />
       <main className="main">
         <Topbar
