@@ -38,6 +38,32 @@ function App() {
   const markAllRead = () => setNotifications(ns => ns.map(n => ({ ...n, read: true })));
   const markRead = id => setNotifications(ns => ns.map(n => n.id === id ? { ...n, read: true } : n));
 
+  // ── Подключение мессенджеров для уведомлений ───────────────────────────
+  // Состояние подключённых каналов + флаг скрытого баннера. Хранится в
+  // localStorage чтобы переживать перезагрузку страницы.
+  const [messengerChannels, setMessengerChannels] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('colver_msgr_channels') || '{"telegram":false,"email":null}'); }
+    catch { return { telegram: false, email: null }; }
+  });
+  const [bannerHidden, setBannerHidden] = useState(() => localStorage.getItem('colver_msgr_banner') === '1');
+  const persistChannels = (next) => {
+    setMessengerChannels(next);
+    try { localStorage.setItem('colver_msgr_channels', JSON.stringify(next)); } catch {}
+    // Если хотя бы один канал подключён — баннер должен пропасть.
+    if (next.telegram || next.email) {
+      setBannerHidden(false);
+      try { localStorage.removeItem('colver_msgr_banner'); } catch {}
+    }
+  };
+  const hideBanner = () => {
+    setBannerHidden(true);
+    try { localStorage.setItem('colver_msgr_banner', '1'); } catch {}
+  };
+
+  // null | 'choose' | 'telegram' | 'email'
+  const [connectModal, setConnectModal] = useState(null);
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+
   // ── @mention handler: упоминание сотрудника в комментарии задачи ───────
   // Создаёт push-уведомление с taskId — клик на нём открывает деталь задачи.
   const handleMention = ({ managerName, taskId, taskTitle, comment }) => {
@@ -246,7 +272,60 @@ function App() {
         onMarkRead={markRead}
         onOpenCall={openCall}
         onOpenTask={openTaskDetail}
+        messengerChannels={messengerChannels}
+        bannerHidden={bannerHidden}
+        onHideBanner={hideBanner}
+        onOpenConnect={() => setConnectModal('choose')}
+        onOpenManage={() => setManageModalOpen(true)}
       />
+
+      {/* Выбор канала уведомлений */}
+      {connectModal === 'choose' && (
+        <ChooseChannelModal
+          onClose={() => setConnectModal(null)}
+          onPickTelegram={() => setConnectModal('telegram')}
+          onPickEmail={() => setConnectModal('email')}
+        />
+      )}
+      {connectModal === 'telegram' && (
+        <TelegramConnectModal
+          onClose={() => setConnectModal(null)}
+          onSuccess={() => {
+            persistChannels({ ...messengerChannels, telegram: true });
+            setConnectModal(null);
+            showToast('Telegram bot успешно подключён');
+          }}
+        />
+      )}
+      {connectModal === 'email' && (
+        <EmailConnectModal
+          onClose={() => setConnectModal(null)}
+          onSuccess={(email) => {
+            persistChannels({ ...messengerChannels, email });
+            setConnectModal(null);
+            showToast(`Email ${email} успешно подключён`);
+          }}
+        />
+      )}
+      {manageModalOpen && (
+        <ManageChannelsModal
+          channels={messengerChannels}
+          onClose={() => setManageModalOpen(false)}
+          onDisconnect={(key) => {
+            const next = { ...messengerChannels };
+            if (key === 'telegram') next.telegram = false;
+            if (key === 'email')    next.email = null;
+            persistChannels(next);
+            showToast(key === 'telegram' ? 'Telegram отключён' : 'Email отключён');
+            // Если каналов больше нет — баннер вновь появится при следующем открытии.
+            if (!next.telegram && !next.email) {
+              setBannerHidden(false);
+              try { localStorage.removeItem('colver_msgr_banner'); } catch {}
+            }
+          }}
+          onConnectMore={() => { setManageModalOpen(false); setConnectModal('choose'); }}
+        />
+      )}
 
       {/* Call modal — z-index динамический через useModalZ, поэтому
           новый CallModal всегда поверх предыдущей модалки. */}

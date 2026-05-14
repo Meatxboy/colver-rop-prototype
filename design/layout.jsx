@@ -55,7 +55,7 @@ function initNotifications() {
 }
 
 // ── NotificationsDrawer ───────────────────────────────────────────────────
-function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMarkRead, onOpenCall, onOpenTask }) {
+function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMarkRead, onOpenCall, onOpenTask, messengerChannels = { telegram:false, email:null }, bannerHidden = false, onHideBanner, onOpenConnect, onOpenManage }) {
   const unread = notifications.filter(n => !n.read).length;
 
   if (!open) return null;
@@ -114,10 +114,37 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
 
         {/* Notification list */}
         <div style={{flex:1,overflowY:'auto',padding:'8px 0'}}>
+          {/* Баннер «Подключите мессенджер» — показывается, пока ни Telegram,
+              ни Email не подключены и пользователь не закрыл баннер крестиком. */}
+          {!messengerChannels.telegram && !messengerChannels.email && !bannerHidden && (
+            <div className="notif-banner">
+              <button
+                className="notif-banner-close"
+                aria-label="Скрыть"
+                title="Скрыть"
+                onClick={onHideBanner}
+              ><Icon.x size={12}/></button>
+              <div className="notif-banner-title">
+                Подключите мессенджер, чтобы мгновенно получать уведомления
+              </div>
+              <div className="notif-banner-icons">
+                <span title="Telegram" className="notif-banner-icon" style={{background:'#229ED9'}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+                </span>
+                <span title="Email" className="notif-banner-icon" style={{background:'#475569'}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </span>
+              </div>
+              <button className="notif-banner-btn" onClick={onOpenConnect}>
+                Подключить
+              </button>
+            </div>
+          )}
+
           {notifications.length === 0 && (
             <div style={{textAlign:'center',padding:'40px 20px',color:'var(--muted-foreground)'}}>
               <Icon.bell size={28}/>
-              <div style={{marginTop:10,fontSize:13}}>Нет уведомлений</div>
+              <div style={{marginTop:10,fontSize:13}}>Нет новых уведомлений</div>
             </div>
           )}
 
@@ -228,9 +255,29 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
             <span style={{fontWeight:600,color:'var(--foreground)'}}>Приоритет 1</span> — мгновенно &nbsp;·&nbsp;
             <span style={{fontWeight:600,color:'var(--foreground)'}}>Дайджест</span> — каждые 30 мин
           </div>
-          <div style={{fontSize:11,color:'var(--muted-foreground)',marginTop:3}}>
-            Также дублируется в Telegram / почту
-          </div>
+          {/* Подсказка «Также дублируется в Telegram / Почту» появляется
+              только когда хотя бы один канал подключён. Клик по подчёркнутому
+              каналу → ManageChannelsModal. */}
+          {(messengerChannels.telegram || messengerChannels.email) && (
+            <div style={{fontSize:11,color:'var(--muted-foreground)',marginTop:3}}>
+              Также дублируется в{' '}
+              <button onClick={onOpenManage}
+                style={{background:'none',border:0,padding:0,cursor:'pointer',
+                  textDecoration: messengerChannels.telegram ? 'underline' : 'none',
+                  color: messengerChannels.telegram ? 'var(--primary)' : 'var(--muted-foreground)',
+                  fontSize:11,fontFamily:'inherit'}}>
+                Telegram
+              </button>
+              {' / '}
+              <button onClick={onOpenManage}
+                style={{background:'none',border:0,padding:0,cursor:'pointer',
+                  textDecoration: messengerChannels.email ? 'underline' : 'none',
+                  color: messengerChannels.email ? 'var(--primary)' : 'var(--muted-foreground)',
+                  fontSize:11,fontFamily:'inherit'}}>
+                почту
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>
