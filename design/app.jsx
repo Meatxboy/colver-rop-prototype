@@ -278,6 +278,9 @@ function App() {
       desc="Этот раздел будет реализован на следующем спринте."
       action={<Button variant="default" onClick={()=>setRoute({page:'dashboard'})}>Назад на дашборд</Button>}
     /></div>;
+  } else {
+    // Любой неизвестный route.page → 404.
+    pageContent = <NotFoundPage onGoHome={() => setRoute({ page: 'dashboard' })}/>;
   }
 
   const aiContext = callModalId ? `звонок #${callModalId}` : route.page === 'calls' ? 'список звонков' : route.page;

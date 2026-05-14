@@ -519,4 +519,32 @@ function AnalyticsPage({ data, period, setPeriod }) {
   );
 }
 
-Object.assign(window, { CallDetail, CallModal, ProcessedPage, AnalyticsPage });
+// ── 404: страница не найдена ─────────────────────────────────────────────
+function NotFoundPage({ onGoHome }) {
+  return (
+    <div className="content" style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'70vh'}}>
+      <div style={{textAlign:'center', maxWidth:480, padding:'40px 20px'}}>
+        <div style={{fontSize:120, fontWeight:800, lineHeight:1,
+          background:'linear-gradient(135deg, var(--primary), #7C3AED)',
+          WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+          backgroundClip:'text', letterSpacing:'-4px', marginBottom:12}}>
+          404
+        </div>
+        <div style={{fontSize:22, fontWeight:700, marginBottom:10}}>
+          Страница не найдена
+        </div>
+        <div style={{fontSize:14, color:'var(--muted-foreground)', lineHeight:1.55, marginBottom:24}}>
+          Возможно, ссылка устарела или раздел был перемещён. Проверьте адрес
+          или вернитесь на главную.
+        </div>
+        <div style={{display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap'}}>
+          <Button variant="default" size="md" onClick={onGoHome}>
+            <Icon.back size={14}/> На дашборд
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { CallDetail, CallModal, ProcessedPage, AnalyticsPage, NotFoundPage });
