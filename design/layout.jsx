@@ -285,7 +285,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
 }
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
-function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen }) {
+function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, currentRole = 'rop', currentUserName = 'Алексей Петров', onSwitchRole }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userRef = useRef(null);
   // Close user menu on outside click.
@@ -334,21 +334,33 @@ function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen }) {
       <div className="sidebar-footer" ref={userRef} style={{position:'relative'}}>
         <button
           className="user-card"
-          title="Алексей Петров · РОП"
+          title={`${currentUserName} · ${currentRole === 'manager' ? 'Менеджер продаж' : 'РОП'}`}
           onClick={() => setUserMenuOpen(o => !o)}
         >
-          <Avatar name="Алексей Петров" size={32}/>
+          <Avatar name={currentUserName} size={32}/>
         </button>
         {userMenuOpen && (
           <div className="user-menu" role="menu">
             <div className="user-menu-head">
-              <div className="user-menu-name">Алексей Петров</div>
-              <div className="user-menu-role">РОП · Команда А</div>
+              <div className="user-menu-name">{currentUserName}</div>
+              <div className="user-menu-role">
+                {currentRole === 'manager' ? 'Менеджер продаж · Команда А' : 'РОП · Команда А'}
+              </div>
             </div>
+            {/* Переключение роли — только для прототипа. В проде эта строка
+                заменяется на реальный logout по серверной сессии. */}
             <button
               type="button"
               className="user-menu-item"
-              onClick={() => { setUserMenuOpen(false); /* в прототипе — без реального logout */ alert('Сеанс завершён (прототип)'); }}
+              style={{color:'var(--foreground)'}}
+              onClick={() => { setUserMenuOpen(false); onSwitchRole && onSwitchRole(currentRole === 'manager' ? 'rop' : 'manager'); }}
+            >
+              <Icon.user size={14}/> Войти как {currentRole === 'manager' ? 'РОП' : 'менеджер'}
+            </button>
+            <button
+              type="button"
+              className="user-menu-item"
+              onClick={() => { setUserMenuOpen(false); alert('Сеанс завершён (прототип)'); }}
             >
               <Icon.logout size={14}/> Выйти
             </button>

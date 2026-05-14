@@ -103,9 +103,12 @@ function AgGridReactLite({
 }
 
 // ── Calls page ───────────────────────────────────────────────────────────
-function CallsPage({ data, onOpenCall, period, setPeriod }) {
-  const [selectedTab, setSelectedTab] = useState('targeted');
-  const [filters, setFilters] = useState({ manager:'all' });
+function CallsPage({ data, onOpenCall, period, setPeriod, currentRole = 'rop', currentUserShort = '', currentUserName = '' }) {
+  const isManager = currentRole === 'manager';
+  // Менеджер по ТЗ видит только вкладку «Целевые».
+  const [selectedTab, setSelectedTab] = useState(isManager ? 'targeted' : 'targeted');
+  // В CALLS поле manager хранит полное имя (emp.name) → фильтруем по нему.
+  const [filters, setFilters] = useState({ manager: isManager ? currentUserName : 'all' });
 
   // Persisted column state per tab. Lives in a ref to avoid re-render storms
   // when the user drags a column edge.
@@ -227,12 +230,16 @@ function CallsPage({ data, onOpenCall, period, setPeriod }) {
       </div>
 
       <Card>
-        <div style={{padding:'12px 14px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap'}}>
-          <Tabs tabs={tabs} active={selectedTab} onChange={setSelectedTab}/>
-          <div className="row" style={{gap:8}}>
-            <Select value={filters.manager} onChange={v=>setFilters({...filters,manager:v})} options={managerOptions}/>
+        {/* Для менеджера: убираем вкладки и фильтр сотрудника — отображается
+            только таблица «Целевые» по его звонкам. */}
+        {!isManager && (
+          <div style={{padding:'12px 14px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap'}}>
+            <Tabs tabs={tabs} active={selectedTab} onChange={setSelectedTab}/>
+            <div className="row" style={{gap:8}}>
+              <Select value={filters.manager} onChange={v=>setFilters({...filters,manager:v})} options={managerOptions}/>
+            </div>
           </div>
-        </div>
+        )}
         {/* На «Нецелевых» всего 4 колонки — ограничиваем ширину сетки,
             чтобы справа не было большого пустого пространства, но
             достаточно широкой, чтобы «Содержание» помещалось в 1 строку. */}

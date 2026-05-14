@@ -1,6 +1,24 @@
 // ── Main app ────────────────────────────────────────────────────────────
 function App() {
   const [route, setRoute] = useState({ page: 'dashboard' });
+
+  // ── Роль текущего пользователя ──────────────────────────────────────────
+  // 'rop' — руководитель отдела продаж (видит всё, может всё).
+  // 'manager' — менеджер продаж (видит только свои данные, ограничения
+  // на действия согласно ТЗ ЛК менеджера). Для прототипа — выдуманный
+  // менеджер (первый из EMPLOYEES). Переключение из меню аватара.
+  const DEMO_MANAGER_NAME = 'Васильева Екатерина Николаевна';
+  const DEMO_MANAGER_SHORT = 'Васильева Е. Н.';
+  const [currentRole, setCurrentRole] = useState(() => localStorage.getItem('colver_role') || 'rop');
+  const switchRole = (next) => {
+    setCurrentRole(next);
+    try { localStorage.setItem('colver_role', next); } catch {}
+  };
+  const isManager = currentRole === 'manager';
+  // Имя текущего менеджера — используется как фильтр везде.
+  const currentUserName  = isManager ? DEMO_MANAGER_NAME  : 'Алексей Петров';
+  const currentUserShort = isManager ? DEMO_MANAGER_SHORT : 'Алексей Петров';
+
   const [period, setPeriod] = useState('week');
   const [aiOpen, setAiOpen] = useState(false);
   const [aiMessages, setAiMessages] = useState(null);
@@ -67,7 +85,18 @@ function App() {
   // ── Notifications ──────────────────────────────────────────────────────
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState(() => initNotifications());
-  const notifUnread = notifications.filter(n => !n.read).length;
+  // Менеджер видит только свои уведомления — где упомянут он сам.
+  const visibleNotifications = isManager
+    ? notifications.filter(n => {
+        if (!n.manager) return false;
+        const short = currentUserShort;
+        // Сравнение по фамилии (первая часть, до пробела).
+        const matchByFull = n.manager === short;
+        const matchByLast = (n.manager || '').split(' ')[0] === short.split(' ')[0];
+        return matchByFull || matchByLast;
+      })
+    : notifications;
+  const notifUnread = visibleNotifications.filter(n => !n.read).length;
   const markAllRead = () => setNotifications(ns => ns.map(n => ({ ...n, read: true })));
   const markRead = id => setNotifications(ns => ns.map(n => n.id === id ? { ...n, read: true } : n));
 
@@ -232,15 +261,15 @@ function App() {
   let pageContent = null;
   let breadcrumbs = null;
   if (route.page === 'dashboard') {
-    pageContent = <Dashboard data={dashboardData} onOpenCall={openCall} onOpenManager={openManager} period={period} setPeriod={setPeriod} onProcess={handleProcess} onCreateTask={openCreateTask} tasks={tasks} onOpenTask={openTaskDetail}/>;
+    pageContent = <Dashboard data={dashboardData} onOpenCall={openCall} onOpenManager={openManager} period={period} setPeriod={setPeriod} onProcess={handleProcess} onCreateTask={openCreateTask} tasks={tasks} onOpenTask={openTaskDetail} currentRole={currentRole} currentUserShort={currentUserShort}/>;
   } else if (route.page === 'calls') {
-    pageContent = <CallsPage data={data} onOpenCall={openCall} period={period} setPeriod={setPeriod}/>;
+    pageContent = <CallsPage data={data} onOpenCall={openCall} period={period} setPeriod={setPeriod} currentRole={currentRole} currentUserShort={currentUserShort} currentUserName={currentUserName}/>;
     breadcrumbs = [{ label:'Звонки' }];
   } else if (route.page === 'processed') {
     pageContent = <ProcessedPage data={{ ...data, tasks }} onOpenCall={openCall}/>;
     breadcrumbs = [{ label:'Обработанные' }];
   } else if (route.page === 'tasks') {
-    pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onUpdateTask={handleUpdateTask} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention} onTaskClosed={(t) => showToast(`Задача «${t.title}» перенесена в «Выполнено»`)}/>;
+    pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onUpdateTask={handleUpdateTask} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention} onTaskClosed={(t) => showToast(`Задача «${t.title}» перенесена в «Выполнено»`)} currentRole={currentRole} currentUserShort={currentUserShort} currentUserName={currentUserName}/>;
     breadcrumbs = [{ label:'Задачи' }];
   } else if (route.page === 'manager' || route.page === 'settings' || route.page === 'analytics') {
     pageContent = <div className="content"><EmptyState
@@ -284,6 +313,9 @@ function App() {
         route={route} onNavigate={setRoute}
         notifUnread={notifUnread} notifOpen={notifOpen}
         onNotifToggle={() => setNotifOpen(o => !o)}
+        currentRole={currentRole}
+        currentUserName={currentUserName}
+        onSwitchRole={switchRole}
       />
       <main className="main">
         <Topbar
@@ -299,7 +331,7 @@ function App() {
       {/* Notifications drawer — lowest modal layer (z:120) */}
       <NotificationsDrawer
         open={notifOpen}
-        notifications={notifications}
+        notifications={visibleNotifications}
         onClose={() => setNotifOpen(false)}
         onMarkAllRead={markAllRead}
         onMarkRead={markRead}

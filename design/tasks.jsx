@@ -252,7 +252,9 @@ function TaskCreateModal({ prefill = {}, managers = [], onClose, onSave, onOpenC
 }
 
 // ── TaskDetailModal ───────────────────────────────────────────────────────
-function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpenCall, onMention, onCloseTask }) {
+function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpenCall, onMention, onCloseTask, currentRole = 'rop' }) {
+  // Менеджер не может закрывать задачи, созданные РОП.
+  const cannotClose = currentRole === 'manager' && task.creator === 'rop';
   const z = useModalZ();
   const [form, setForm] = useState({
     title:    task.title    || '',
@@ -658,9 +660,11 @@ function TaskDetailModal({ task, managers = [], onClose, onSave, onDelete, onOpe
           <Button
             variant="default" size="md"
             onClick={dirty ? handleSave : handleCloseTask}
-            disabled={!form.title.trim()}
-            style={!form.title.trim() ? {opacity:.5,pointerEvents:'none'} : {}}
-            title={dirty ? 'Сохранить и закрыть модальное окно' : 'Перевести задачу в статус «Выполнено»'}
+            disabled={!form.title.trim() || (cannotClose && !dirty)}
+            style={(!form.title.trim() || (cannotClose && !dirty)) ? {opacity:.5,pointerEvents:'none'} : {}}
+            title={cannotClose && !dirty
+              ? 'Эту задачу создал РОП — закрыть может только он'
+              : (dirty ? 'Сохранить и закрыть модальное окно' : 'Перевести задачу в статус «Выполнено»')}
           >
             <Icon.check size={13}/> {dirty ? 'Сохранить изменения' : 'Закрыть задачу'}
           </Button>
@@ -829,7 +833,13 @@ function KanbanColumn({ col, tasks, onDragStart, onDragEnd, onDragOverCol, onDro
 }
 
 // ── TasksPage ─────────────────────────────────────────────────────────────
-function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, onTaskClosed, onUpdateTask, data }) {
+function TasksPage({ tasks: allTasks, setTasks, onOpenCall, onCreateTask, onMention, onTaskClosed, onUpdateTask, data, currentRole = 'rop', currentUserShort = '', currentUserName = '' }) {
+  const isManager = currentRole === 'manager';
+  // Менеджер видит только свои задачи: назначенные на него (по полному
+  // имени) либо созданные им (creator='manager').
+  const tasks = isManager
+    ? allTasks.filter(t => t.manager === currentUserName || (t.creator === 'manager' && t.manager === currentUserName))
+    : allTasks;
   const [draggingId, setDraggingId]   = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
   // Drop-target card для вертикального реордеринга внутри колонки.
@@ -975,7 +985,7 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, onTas
             </button>
           )}
         </div>
-        <Select value={filters.manager}  onChange={v => setFilters(f=>({...f,manager:v}))}  options={managerOpts}/>
+        {!isManager && <Select value={filters.manager}  onChange={v => setFilters(f=>({...f,manager:v}))}  options={managerOpts}/>}
         <Select value={filters.priority} onChange={v => setFilters(f=>({...f,priority:v}))} options={prioOpts}/>
       </div>
 
@@ -1010,6 +1020,7 @@ function TasksPage({ tasks, setTasks, onOpenCall, onCreateTask, onMention, onTas
           onOpenCall={onOpenCall}
           onMention={onMention}
           onCloseTask={onTaskClosed}
+          currentRole={currentRole}
         />
       )}
 

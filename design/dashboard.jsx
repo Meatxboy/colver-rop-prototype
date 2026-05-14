@@ -1,6 +1,12 @@
 // ── Dashboard page ────────────────────────────────────────────────────────
-function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProcess, onCreateTask, tasks, onOpenTask }) {
-  const { kpis, queue, queueManagement, queuePractices, managers, lossReasons, objections, callsToday, ratings = { byScore:[], byConv:[] } } = data;
+function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProcess, onCreateTask, tasks, onOpenTask, currentRole = 'rop', currentUserShort = '' }) {
+  const isManager = currentRole === 'manager';
+  const { kpis, queue: rawQueue, queueManagement: rawQM, queuePractices: rawQP, managers: rawManagers, lossReasons, objections, callsToday, ratings = { byScore:[], byConv:[] } } = data;
+  // Менеджер видит только свои данные.
+  const queue = isManager ? rawQueue.filter(q => q.manager === currentUserShort) : rawQueue;
+  const queueManagement = isManager ? [] : rawQM;
+  const queuePractices  = isManager ? [] : rawQP;
+  const managers = isManager ? rawManagers.filter(m => m.name === currentUserShort || (m.name || '').startsWith(currentUserShort.split(' ')[0])) : rawManagers;
   const [queueTab, setQueueTab] = useState('attention');
   const [managerModalId, setManagerModalId] = useState(null);
   const managerModalData = managers.find(m => m.id === managerModalId) || null;
@@ -21,7 +27,9 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
         <CardHeader>
           <div style={{display:'flex', alignItems:'center', gap:14, flex:1, flexWrap:'wrap'}}>
             <Tabs
-              tabs={[
+              tabs={isManager ? [
+                {key:'attention', label:'Срочно реагировать', count: queueCounts.attention},
+              ] : [
                 {key:'attention', label:'Требуют внимания', count: queueCounts.attention},
                 {key:'management', label:'Управленческие решения', count: queueCounts.management},
                 {key:'practices', label:'Лучшие практики', count: queueCounts.practices},
@@ -42,7 +50,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
             </div>
           </div>
         </CardHeader>
-        {queueTab === 'attention' && <AttentionQueue items={queue} onOpenCall={onOpenCall} onProcess={onProcess} onCreateTask={onCreateTask} tasks={tasks} onOpenTask={onOpenTask}/>}
+        {queueTab === 'attention' && <AttentionQueue items={queue} onOpenCall={onOpenCall} onProcess={onProcess} onCreateTask={onCreateTask} tasks={tasks} onOpenTask={onOpenTask} currentRole={currentRole} currentUserShort={currentUserShort}/>}
         {queueTab === 'management' && <ManagementQueue items={queueManagement} onProcess={onProcess}/>}
         {queueTab === 'practices' && <PracticesQueue items={queuePractices} onProcess={onProcess}/>}
       </Card>
@@ -100,7 +108,7 @@ function Dashboard({ data, onOpenCall, onOpenManager, period, setPeriod, onProce
           </div>
 
           {/* Рейтинг сотрудников (4.5 ТЗ) */}
-          <RatingTable ratings={ratings}/>
+          <RatingTable ratings={ratings} highlightName={isManager ? currentUserShort : null}/>
 
           {/* Аналитика по группе (4.7 ТЗ) */}
           <Card>
@@ -347,7 +355,8 @@ function SaluteOverlay() {
 }
 
 // ── Attention Queue ──────────────────────────────────────────────────────
-function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onOpenTask }) {
+function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onOpenTask, currentRole = 'rop', currentUserShort = '' }) {
+  const isManager = currentRole === 'manager';
   const [expanded, setExpanded] = useState(null); // no row expanded by default
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
@@ -473,10 +482,14 @@ function AttentionQueue({ items, onOpenCall, onProcess, onCreateTask, tasks, onO
                           : <Button size="lg" variant="outline" onClick={()=>onCreateTask && onCreateTask({ manager: item.manager, callId: item.callId, title: item.problem, text: item.recommendation, priority: item.priority <= 1 ? 'high' : 'medium' })}><Icon.calendar size={14}/> Поставить задачу менеджеру</Button>
                         }
                         <div style={{flex:1}}></div>
-                        <span className="salute-wrap">
-                          <Button size="lg" variant="success" onClick={()=>triggerResolve(item)}><Icon.check size={14}/> Отметить решённым</Button>
-                          {saluteFor === item.id && <SaluteOverlay/>}
-                        </span>
+                        {/* «Отметить решённым» — только для РОП.
+                            Менеджер этого делать не может (по ТЗ ЛК). */}
+                        {!isManager && (
+                          <span className="salute-wrap">
+                            <Button size="lg" variant="success" onClick={()=>triggerResolve(item)}><Icon.check size={14}/> Отметить решённым</Button>
+                            {saluteFor === item.id && <SaluteOverlay/>}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -663,7 +676,7 @@ function scoreToColor(val, max) {
 // Rows are static — names are NOT clickable. Sorting is via the two header
 // columns (Менеджер / Балл|Конверсия). Body scrolls if there are >10 rows;
 // the header stays fixed above the scroll area.
-function RatingCard({ title, rows, valueKey, valueLabel, maxVal, suffix }) {
+function RatingCard({ title, rows, valueKey, valueLabel, maxVal, suffix, highlightName }) {
   // Default sort: rating value descending (so rank #1 appears first).
   // Tri-state by column: 1st click → primary direction, 2nd → opposite,
   // 3rd → reset to default (value desc, rank #1 first).
@@ -736,10 +749,14 @@ function RatingCard({ title, rows, valueKey, valueLabel, maxVal, suffix }) {
           const color   = scoreToColor(val, maxVal);
           const delta   = r.rankDelta;
           const isLast  = i === sorted.length - 1;
+          // Подсветка строки текущего менеджера: фон совпадает с активной
+          // строкой в таблице очереди внимания.
+          const isSelf = highlightName && (r.name === highlightName || (r.name || '').startsWith(highlightName.split(' ')[0]));
           return (
             <div key={r.id}
               style={{display:'flex', alignItems:'center', gap:10, padding:'8px 16px',
-                borderBottom: isLast ? 'none' : '1px solid var(--border)'}}
+                borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                background: isSelf ? '#F0F5FF' : 'transparent'}}
             >
               {/* Medal / rank — медаль/номер берётся из исходных данных и
                   привязан к сотруднику, а не к текущей позиции в списке. */}
@@ -787,7 +804,7 @@ function RatingCard({ title, rows, valueKey, valueLabel, maxVal, suffix }) {
   );
 }
 
-function RatingTable({ ratings }) {
+function RatingTable({ ratings, highlightName }) {
   return (
     <div style={{display:'flex', gap:16}}>
       <RatingCard
@@ -797,6 +814,7 @@ function RatingTable({ ratings }) {
         valueLabel="Балл"
         maxVal={5}
         suffix="score"
+        highlightName={highlightName}
       />
       <RatingCard
         title="Рейтинг · Конверсия в целевое действие"
@@ -805,6 +823,7 @@ function RatingTable({ ratings }) {
         valueLabel="Конверсия"
         maxVal={100}
         suffix="%"
+        highlightName={highlightName}
       />
     </div>
   );
