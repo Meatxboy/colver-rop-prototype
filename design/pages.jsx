@@ -519,6 +519,181 @@ function AnalyticsPage({ data, period, setPeriod }) {
   );
 }
 
+// ── Страница «Поддержка»: контакты ТП ───────────────────────────────────
+function SupportPage({ onGoHome }) {
+  const [copied, setCopied] = useState(null); // ключ скопированной карточки
+  const copy = (text, key) => {
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{});
+    setCopied(key);
+    setTimeout(() => setCopied(c => c === key ? null : c), 1600);
+  };
+
+  const channels = [
+    {
+      key: 'email',
+      label: 'Email',
+      value: 'support@colver.app',
+      desc: 'Подробные обращения, скриншоты, сложные вопросы',
+      bg: '#475569',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+      href: 'mailto:support@colver.app',
+      actionLabel: 'Написать письмо',
+    },
+    {
+      key: 'phone',
+      label: 'Телефон',
+      value: '+7 (495) 123-45-67',
+      desc: 'Голосовая линия ПН–ПТ, 9:00–19:00 МСК',
+      bg: '#16A34A',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+      href: 'tel:+74951234567',
+      actionLabel: 'Позвонить',
+    },
+    {
+      key: 'telegram',
+      label: 'Telegram',
+      value: '@colver_support',
+      desc: 'Быстрая поддержка, среднее время ответа — 5–10 минут',
+      bg: '#229ED9',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>,
+      href: 'https://t.me/colver_support',
+      actionLabel: 'Открыть в Telegram',
+    },
+    {
+      key: 'max',
+      label: 'MAX',
+      value: '@colver_support',
+      desc: 'Российский мессенджер. Альтернатива Telegram',
+      bg: '#0B5FFF',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 20l1.3-3.9a9 9 0 1 1 3.6 3.6L3 20"/><path d="M9 11h.01"/><path d="M12 11h.01"/><path d="M15 11h.01"/></svg>,
+      href: 'https://max.ru/colver_support',
+      actionLabel: 'Открыть в MAX',
+    },
+  ];
+
+  return (
+    <div className="content">
+      {/* Header */}
+      <div className="row-between">
+        <div>
+          <div className="page-title" style={{fontSize:20}}>Поддержка</div>
+          <div className="muted" style={{fontSize:12.5, marginTop:2}}>
+            Свяжитесь с командой ТП любым удобным способом
+          </div>
+        </div>
+        {onGoHome && (
+          <Button variant="outline" size="md" onClick={onGoHome}>
+            <Icon.back size={13}/> На дашборд
+          </Button>
+        )}
+      </div>
+
+      {/* FAQ-блок */}
+      <Card>
+        <CardContent>
+          <div style={{fontSize:14, fontWeight:600, marginBottom:8}}>
+            Когда обращаться в поддержку?
+          </div>
+          <ul style={{margin:0, paddingLeft:18, fontSize:13, lineHeight:1.6, color:'#3F3F46'}}>
+            <li>Не получается войти, забыли пароль</li>
+            <li>Ошибки в данных звонков, оценках, отчётах</li>
+            <li>Нужна помощь с интеграциями (Telegram/Email уведомления)</li>
+            <li>Вопросы по работе нейроаналитика и обучению модели</li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      {/* Каналы */}
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:12}}>
+        {channels.map(c => (
+          <Card key={c.key}>
+            <CardContent>
+              <div style={{display:'flex', alignItems:'flex-start', gap:12}}>
+                <div style={{width:44, height:44, borderRadius:10, background:c.bg, color:'#fff',
+                  display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+                  boxShadow:'0 2px 6px rgba(0,0,0,.10)'}}>
+                  {c.icon}
+                </div>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:12, color:'var(--muted-foreground)',
+                    textTransform:'uppercase', letterSpacing:.4, fontWeight:600,
+                    marginBottom:2}}>{c.label}</div>
+                  <div style={{fontSize:15, fontWeight:700, marginBottom:6, wordBreak:'break-word'}}>
+                    {c.value}
+                  </div>
+                  <div style={{fontSize:12.5, color:'var(--muted-foreground)',
+                    lineHeight:1.5, marginBottom:12}}>{c.desc}</div>
+                  <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                    <a href={c.href}
+                      target={c.href.startsWith('http') ? '_blank' : undefined}
+                      rel={c.href.startsWith('http') ? 'noopener' : undefined}
+                      style={{display:'inline-flex', alignItems:'center', gap:5,
+                        padding:'6px 12px', borderRadius:6,
+                        background:'var(--primary)', color:'#fff', textDecoration:'none',
+                        fontSize:12.5, fontWeight:600}}>
+                      {c.actionLabel}
+                    </a>
+                    <button type="button"
+                      onClick={() => copy(c.value, c.key)}
+                      style={{display:'inline-flex', alignItems:'center', gap:5,
+                        padding:'6px 12px', borderRadius:6,
+                        background:'#fff', color:'var(--foreground)',
+                        border:'1px solid var(--border)', cursor:'pointer',
+                        fontSize:12.5, fontWeight:500, fontFamily:'inherit'}}>
+                      {copied === c.key
+                        ? <><Icon.check size={11}/> Скопировано</>
+                        : <><Icon.copy size={11}/> Копировать</>}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Часы работы / уровни */}
+      <Card>
+        <CardContent>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16}}>
+            <div>
+              <div style={{fontSize:12, color:'var(--muted-foreground)',
+                textTransform:'uppercase', letterSpacing:.4, fontWeight:600, marginBottom:6}}>
+                Часы работы
+              </div>
+              <div style={{fontSize:13, lineHeight:1.55}}>
+                ПН–ПТ, 9:00–19:00 МСК.<br/>
+                В выходные — только Email-обращения.
+              </div>
+            </div>
+            <div>
+              <div style={{fontSize:12, color:'var(--muted-foreground)',
+                textTransform:'uppercase', letterSpacing:.4, fontWeight:600, marginBottom:6}}>
+                Среднее время ответа
+              </div>
+              <div style={{fontSize:13, lineHeight:1.55}}>
+                Telegram / MAX — до 10 минут.<br/>
+                Email — до 1 часа.<br/>
+                Телефон — без ожидания.
+              </div>
+            </div>
+            <div>
+              <div style={{fontSize:12, color:'var(--muted-foreground)',
+                textTransform:'uppercase', letterSpacing:.4, fontWeight:600, marginBottom:6}}>
+                Срочные случаи
+              </div>
+              <div style={{fontSize:13, lineHeight:1.55}}>
+                Сервис недоступен или массовый сбой —<br/>
+                звоните на телефон вне зависимости от часов.
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ── Offline: нет интернета ───────────────────────────────────────────────
 // Полноэкранный overlay поверх приложения. Появляется автоматически по
 // `offline`-событию браузера или вручную через demo-флаг (для прототипа).
@@ -617,4 +792,4 @@ function NotFoundPage({ onGoHome }) {
   );
 }
 
-Object.assign(window, { CallDetail, CallModal, ProcessedPage, AnalyticsPage, NotFoundPage, OfflinePage });
+Object.assign(window, { CallDetail, CallModal, ProcessedPage, AnalyticsPage, NotFoundPage, OfflinePage, SupportPage });

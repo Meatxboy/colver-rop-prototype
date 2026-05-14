@@ -285,7 +285,7 @@ function NotificationsDrawer({ open, notifications, onClose, onMarkAllRead, onMa
 }
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
-function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, currentRole = 'rop', currentUserName = 'Алексей Петров', onSwitchRole, onSimulateOffline, onLogout }) {
+function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, currentRole = 'rop', currentUserName = 'Алексей Петров', onSwitchRole, onSimulateOffline, onOpenSupport, onLogout }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userRef = useRef(null);
   // Close user menu on outside click.
@@ -357,6 +357,16 @@ function Sidebar({ route, onNavigate, notifUnread, onNotifToggle, notifOpen, cur
             >
               <Icon.user size={14}/> Войти как {currentRole === 'manager' ? 'РОП' : 'менеджер'}
             </button>
+            {onOpenSupport && (
+              <button
+                type="button"
+                className="user-menu-item"
+                style={{color:'var(--foreground)'}}
+                onClick={() => { setUserMenuOpen(false); onOpenSupport(); }}
+              >
+                <Icon.info size={14}/> Поддержка
+              </button>
+            )}
             {/* Демо-триггер для проверки страницы «Нет интернета» в прототипе.
                 В проде эта строка не показывается. */}
             {onSimulateOffline && (

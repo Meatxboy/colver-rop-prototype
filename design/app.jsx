@@ -325,6 +325,9 @@ function App() {
   } else if (route.page === 'tasks') {
     pageContent = <TasksPage data={data} tasks={tasks} setTasks={setTasks} onUpdateTask={handleUpdateTask} onOpenCall={openCall} onCreateTask={openCreateTask} onMention={handleMention} onTaskClosed={(t) => showToast(`Задача «${t.title}» перенесена в «Выполнено»`)} currentRole={currentRole} currentUserShort={currentUserShort} currentUserName={currentUserName}/>;
     breadcrumbs = [{ label:'Задачи' }];
+  } else if (route.page === 'support') {
+    pageContent = <SupportPage onGoHome={() => setRoute({ page: 'dashboard' })}/>;
+    breadcrumbs = [{ label:'Поддержка' }];
   } else if (route.page === 'manager' || route.page === 'settings' || route.page === 'analytics') {
     pageContent = <div className="content"><EmptyState
       icon={<Icon.user size={26}/>}
@@ -374,6 +377,7 @@ function App() {
         currentUserName={currentUserName}
         onSwitchRole={switchRole}
         onSimulateOffline={() => setDemoOffline(true)}
+        onOpenSupport={() => setRoute({ page: 'support' })}
         onLogout={handleLogout}
       />
       <main className="main">
